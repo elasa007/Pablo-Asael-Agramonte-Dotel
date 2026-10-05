@@ -1,0 +1,6 @@
+{
+  "name": "CREATIVO MULTIMEDIA - Portafolio de Dirección Creativa",
+  "description": "Portafolio web editorial y panel de administración para Dirección Creativa y Diseño Multimedia con frontend público y panel privado.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
