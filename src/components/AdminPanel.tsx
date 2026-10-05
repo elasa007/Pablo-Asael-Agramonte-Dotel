@@ -173,14 +173,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       return;
     }
 
-    if (passwordInput === 'admin2026' || passwordInput === 'asael' || passwordInput.length >= 4) {
+    // Validación estricta: Solo entra si el correo y la contraseña son exactamente estos
+    if (emailInput === 'asael.agramonte@gmail.com' && passwordInput === 'PortafoliosAsaelAgramonte**') {
       setIsAuthenticated(true);
       localStorage.setItem('creativo_admin_auth', 'true');
       window.dispatchEvent(new Event('auth-change'));
       onAuthStatusChange?.(true);
       setAuthError(null);
     } else {
-      setAuthError('Contraseña incorrecta. Utiliza "admin2026" para acceder.');
+      // Mensaje de error genérico para no dar pistas a intrusos
+      setAuthError('Usuario o contraseña incorrectos. Acceso denegado.');
     }
   };
 
@@ -193,10 +195,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   };
 
   const handleQuickDemoAccess = () => {
-    setIsAuthenticated(true);
-    localStorage.setItem('creativo_admin_auth', 'true');
-    window.dispatchEvent(new Event('auth-change'));
-    onAuthStatusChange?.(true);
+    // Bloqueamos el botón de "Acceso Rápido" para que nadie pueda entrar con un clic
+    setAuthError('El acceso rápido de demostración ha sido deshabilitado por seguridad.');
   };
 
   const handleToggleSection = (sectionKey: keyof SectionVisibility) => {
@@ -213,7 +213,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setSectionModalTab(tab);
     setIsSectionModalOpen(true);
   };
-
   // Add experience handler
   const handleAddExperienceSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -308,13 +307,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
           {/* Quick Demo Access Button */}
           <div className="pt-2 border-t border-[var(--border-subtle)]">
-            <button
-              onClick={handleQuickDemoAccess}
-              className="w-full py-2.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-elevated)] border border-[var(--border-subtle)] hover:border-[var(--accent-color)] text-[var(--text-primary)] text-xs font-mono rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-            >
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              <span>Acceso Rápido con 1-Clic</span>
-            </button>
             <p className="text-[11px] text-center text-[var(--text-muted)] mt-2">
               Credenciales pre-aprobadas para evaluación de arquitectura
             </p>
