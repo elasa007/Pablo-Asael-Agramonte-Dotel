@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -13,7 +13,10 @@ import {
   Video as VideoIcon, 
   Image as ImageIcon,
   Download,
-  Maximize2
+  Maximize2,
+  ChevronLeft,
+  ChevronRight,
+  Layers
 } from 'lucide-react';
 import { Project } from '../types/portfolio';
 import { parseVideoUrl, parseDocumentUrl } from '../utils/mediaEmbed';
@@ -38,6 +41,32 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
         : 'image';
 
   const [activeMediaTab, setActiveMediaTab] = useState<'image' | 'video' | 'document'>(defaultTab);
+
+  // Carousel images array
+  const carouselImages = (project.images && project.images.length > 0)
+    ? project.images
+    : (project.imageUrl ? [project.imageUrl] : []);
+
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Reset index when project changes
+  useEffect(() => {
+    setCurrentImageIndex(0);
+  }, [project?.id]);
+
+  // Keyboard navigation for carousel
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (activeMediaTab !== 'image' || carouselImages.length <= 1) return;
+      if (e.key === 'ArrowLeft') {
+        setCurrentImageIndex(prev => (prev > 0 ? prev - 1 : carouselImages.length - 1));
+      } else if (e.key === 'ArrowRight') {
+        setCurrentImageIndex(prev => (prev < carouselImages.length - 1 ? prev + 1 : 0));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeMediaTab, carouselImages.length]);
 
   return (
     <AnimatePresence>
@@ -240,41 +269,104 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
                   </div>
                 </div>
               ) : (
-                /* VIEW 3: Main Artwork Photo */
-                <div className="relative w-full max-w-xl rounded-xl overflow-hidden shadow-2xl border border-[var(--border-subtle)] group">
-                  <img
-                    src={project.imageUrl}
-                    alt={project.title}
-                    referrerPolicy="no-referrer"
-                    className="w-full h-auto object-cover max-h-[500px]"
-                  />
+                /* VIEW 3: Main Artwork / Interactive Carousel */
+                <div className="relative w-full max-w-xl flex flex-col items-center">
+                  <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl border border-[var(--border-subtle)] bg-neutral-950 flex items-center justify-center group min-h-[320px] sm:min-h-[420px]">
+                    {/* Active image display with smooth transition */}
+                    <AnimatePresence mode="wait">
+                      <motion.img
+                        key={currentImageIndex}
+                        src={carouselImages[currentImageIndex] || project.imageUrl}
+                        alt={`${project.title} - Imagen ${currentImageIndex + 1}`}
+                        referrerPolicy="no-referrer"
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.02 }}
+                        transition={{ duration: 0.25, ease: 'easeOut' }}
+                        className="w-full h-auto object-contain max-h-[500px] select-none"
+                      />
+                    </AnimatePresence>
 
-                  {/* If video exists, show interactive banner overlay */}
-                  {videoInfo && (
-                    <div 
-                      onClick={() => setActiveMediaTab('video')}
-                      className="absolute inset-0 bg-black/45 hover:bg-black/30 transition-colors flex items-center justify-center cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-3 px-5 py-3 rounded-full bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white shadow-2xl transition-transform group-hover:scale-105 cursor-pointer">
-                        <Play className="w-5 h-5 fill-white" />
-                        <span className="text-xs font-semibold uppercase tracking-wider">
-                          Ver Video en {videoInfo.type === 'youtube' ? 'YouTube' : videoInfo.type === 'vimeo' ? 'Vimeo' : 'Reproductor'}
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                    {/* Carousel Navigation Arrows if multiple images */}
+                    {carouselImages.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentImageIndex(prev => (prev > 0 ? prev - 1 : carouselImages.length - 1))}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/60 hover:bg-[var(--accent-color)] text-white backdrop-blur-md border border-white/10 transition-all cursor-pointer shadow-lg opacity-85 hover:opacity-100 hover:scale-110 z-20"
+                          aria-label="Imagen anterior"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
 
-                  {/* If document exists without video */}
-                  {!videoInfo && docInfo && (
-                    <div 
-                      onClick={() => setActiveMediaTab('document')}
-                      className="absolute bottom-4 left-4 right-4 p-3 bg-black/80 backdrop-blur-md rounded-xl border border-white/20 flex items-center justify-between text-white cursor-pointer hover:bg-black/90 transition-colors"
-                    >
-                      <div className="flex items-center gap-2 text-xs">
-                        <FileText className="w-4 h-4 text-[var(--accent-color)]" />
-                        <span className="font-semibold">{project.documentName || 'Documento disponible (PDF / Slides)'}</span>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentImageIndex(prev => (prev < carouselImages.length - 1 ? prev + 1 : 0))}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/60 hover:bg-[var(--accent-color)] text-white backdrop-blur-md border border-white/10 transition-all cursor-pointer shadow-lg opacity-85 hover:opacity-100 hover:scale-110 z-20"
+                          aria-label="Siguiente imagen"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+
+                        {/* Slide Counter Badge */}
+                        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-md text-white text-xs font-mono font-bold border border-white/10 shadow flex items-center gap-1.5 z-20">
+                          <Layers className="w-3.5 h-3.5 text-[var(--accent-color)]" />
+                          <span>{currentImageIndex + 1} / {carouselImages.length}</span>
+                        </div>
+                      </>
+                    )}
+
+                    {/* If video exists, show interactive banner overlay */}
+                    {videoInfo && (
+                      <div 
+                        onClick={() => setActiveMediaTab('video')}
+                        className="absolute inset-0 bg-black/45 hover:bg-black/30 transition-colors flex items-center justify-center cursor-pointer group z-10"
+                      >
+                        <div className="flex items-center gap-3 px-5 py-3 rounded-full bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white shadow-2xl transition-transform group-hover:scale-105 cursor-pointer">
+                          <Play className="w-5 h-5 fill-white" />
+                          <span className="text-xs font-semibold uppercase tracking-wider">
+                            Ver Video en {videoInfo.type === 'youtube' ? 'YouTube' : videoInfo.type === 'vimeo' ? 'Vimeo' : 'Reproductor'}
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-xs text-[var(--accent-color)] underline">Abrir visor →</span>
+                    )}
+
+                    {/* If document exists without video */}
+                    {!videoInfo && docInfo && (
+                      <div 
+                        onClick={() => setActiveMediaTab('document')}
+                        className="absolute bottom-4 left-4 right-4 p-3 bg-black/80 backdrop-blur-md rounded-xl border border-white/20 flex items-center justify-between text-white cursor-pointer hover:bg-black/90 transition-colors z-10"
+                      >
+                        <div className="flex items-center gap-2 text-xs">
+                          <FileText className="w-4 h-4 text-[var(--accent-color)]" />
+                          <span className="font-semibold">{project.documentName || 'Documento disponible (PDF / Slides)'}</span>
+                        </div>
+                        <span className="text-xs text-[var(--accent-color)] underline">Abrir visor →</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Thumbnail Navigation Strip if multiple images */}
+                  {carouselImages.length > 1 && (
+                    <div className="w-full mt-3 flex items-center justify-center gap-2 overflow-x-auto py-1 px-1">
+                      {carouselImages.map((img, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setCurrentImageIndex(idx)}
+                          className={`relative w-14 h-11 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
+                            currentImageIndex === idx
+                              ? 'border-[var(--accent-color)] ring-2 ring-[var(--accent-color)]/30 scale-105 shadow-md'
+                              : 'border-white/10 opacity-50 hover:opacity-100'
+                          }`}
+                          aria-label={`Ver foto ${idx + 1}`}
+                        >
+                          <img src={img} alt={`Miniatura ${idx + 1}`} className="w-full h-full object-cover" />
+                          <span className="absolute bottom-0 right-0 bg-black/80 text-[8px] font-mono text-white px-1">
+                            {idx + 1}
+                          </span>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>

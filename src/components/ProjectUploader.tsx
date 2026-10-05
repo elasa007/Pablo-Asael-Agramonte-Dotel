@@ -97,6 +97,7 @@ export const ProjectUploader: React.FC<ProjectUploaderProps> = ({
   
   // Image upload state
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [fileName, setFileName] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -113,49 +114,53 @@ export const ProjectUploader: React.FC<ProjectUploaderProps> = ({
 
   // Handle local disk file upload with preview & progress
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    // Validate image or video type
-    if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
-      setStatusMessage({ type: 'error', text: 'Por favor selecciona un archivo de imagen o video válido.' });
+    const fileList = Array.from(files);
+    const validFiles = fileList.filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
+    
+    if (validFiles.length === 0) {
+      setStatusMessage({ type: 'error', text: 'Por favor selecciona archivos de imagen o video válidos.' });
       return;
     }
 
-    setFileName(file.name);
+    setFileName(validFiles.length > 1 ? `${validFiles.length} imágenes para carrusel` : validFiles[0].name);
     setStatusMessage(null);
-
-    // Read local file as Data URL for instant high-speed preview
-    const reader = new FileReader();
-    
-    // Simulate real progressive upload state
     setIsUploading(true);
-    setUploadProgress(15);
-    
-    reader.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percent = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(Math.min(percent, 85));
-      }
-    };
+    setUploadProgress(20);
 
-    reader.onload = () => {
+    const readers = validFiles.map(file => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(readers).then(images => {
       setTimeout(() => {
         setUploadProgress(100);
         setTimeout(() => {
-          setImagePreview(reader.result as string);
+          setGalleryImages(prev => [...prev, ...images]);
+          if (!imagePreview && images.length > 0) {
+            setImagePreview(images[0]);
+          } else if (images.length > 0) {
+            setImagePreview(images[0]);
+          }
           setIsUploading(false);
-          setStatusMessage({ type: 'success', text: `Archivo "${file.name}" cargado exitosamente.` });
+          setStatusMessage({ 
+            type: 'success', 
+            text: validFiles.length > 1 
+              ? `¡${validFiles.length} imágenes cargadas para el carrusel de la obra!` 
+              : `Archivo "${validFiles[0].name}" cargado exitosamente.` 
+          });
         }, 300);
-      }, 400);
-    };
-
-    reader.onerror = () => {
+      }, 300);
+    }).catch(() => {
       setIsUploading(false);
-      setStatusMessage({ type: 'error', text: 'Error al leer el archivo del disco local.' });
-    };
-
-    reader.readAsDataURL(file);
+      setStatusMessage({ type: 'error', text: 'Error al leer los archivos del disco local.' });
+    });
   };
 
   // AI Aspect Ratio Visual Generator simulation
@@ -252,6 +257,7 @@ export const ProjectUploader: React.FC<ProjectUploaderProps> = ({
               client: client.trim() || 'Cliente Confidencial',
               year: year.trim() || new Date().getFullYear().toString(),
               imageUrl: imagePreview,
+              images: galleryImages.length > 0 ? galleryImages : (imagePreview ? [imagePreview] : []),
               videoUrl: videoUrl.trim() || undefined,
               videoPlatform: videoPreview ? (videoPreview.type as any) : undefined,
               documentUrl: documentUrl.trim() || undefined,
@@ -425,6 +431,7 @@ export const ProjectUploader: React.FC<ProjectUploaderProps> = ({
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
+            multiple
             accept="image/*,video/*"
             className="hidden"
           />
@@ -440,10 +447,10 @@ export const ProjectUploader: React.FC<ProjectUploaderProps> = ({
                 <Upload className="w-6 h-6" />
               </div>
               <p className="font-bebas text-xl text-[var(--text-primary)] tracking-wide">
-                SELECCIONAR DESDE EL DISCO LOCAL
+                SELECCIONAR FOTO O MÚLTIPLES FOTOS
               </p>
-              <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-xs">
-                Haz clic para explorar o arrastra tu archivo (JPG, PNG, WebP, MP4)
+              <p className="text-xs text-[var(--text-secondary)] mt-1 max-w-xs font-mono">
+                Puedes seleccionar varias imágenes a la vez para crear un carrusel dinámico en la obra.
               </p>
               {fileName && (
                 <div className="mt-3 px-3 py-1 bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded text-xs text-[var(--accent-color)] font-mono">
@@ -465,23 +472,54 @@ export const ProjectUploader: React.FC<ProjectUploaderProps> = ({
                 </div>
 
                 {imagePreview ? (
-                  <div className="relative rounded-xl overflow-hidden max-h-48 flex items-center justify-center bg-black/40 border border-[var(--border-subtle)]">
-                    <img
-                      src={imagePreview}
-                      alt="Previsualización"
-                      className="max-h-48 w-auto object-contain rounded-lg"
-                    />
-                    
-                    {/* Botón para animar con Veo */}
-                    <button
-                      type="button"
-                      onClick={handleVeoAnimate}
-                      disabled={isVeoAnimating}
-                      className="absolute bottom-2 right-2 px-2.5 py-1.5 bg-black/80 hover:bg-[var(--accent-color)] text-white text-[11px] font-mono rounded flex items-center gap-1.5 transition-colors shadow-lg cursor-pointer"
-                    >
-                      <Film className="w-3 h-3 text-[var(--accent-color)]" />
-                      <span>{isVeoAnimating ? 'Animando...' : 'Animar con Veo 3.1'}</span>
-                    </button>
+                  <div className="space-y-3">
+                    <div className="relative rounded-xl overflow-hidden max-h-48 flex items-center justify-center bg-black/40 border border-[var(--border-subtle)]">
+                      <img
+                        src={imagePreview}
+                        alt="Previsualización"
+                        className="max-h-48 w-auto object-contain rounded-lg"
+                      />
+                      
+                      {/* Botón para animar con Veo */}
+                      <button
+                        type="button"
+                        onClick={handleVeoAnimate}
+                        disabled={isVeoAnimating}
+                        className="absolute bottom-2 right-2 px-2.5 py-1.5 bg-black/80 hover:bg-[var(--accent-color)] text-white text-[11px] font-mono rounded flex items-center gap-1.5 transition-colors shadow-lg cursor-pointer"
+                      >
+                        <Film className="w-3 h-3 text-[var(--accent-color)]" />
+                        <span>{isVeoAnimating ? 'Animando...' : 'Animar con Veo 3.1'}</span>
+                      </button>
+                    </div>
+
+                    {/* Carrusel thumbnails preview */}
+                    {galleryImages.length > 1 && (
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px] font-mono text-[var(--text-muted)]">
+                          <span>Carrusel de la obra ({galleryImages.length} fotos)</span>
+                          <span className="text-[var(--accent-color)]">Haz clic para cambiar portada</span>
+                        </div>
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                          {galleryImages.map((img, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => setImagePreview(img)}
+                              className={`relative w-12 h-10 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
+                                imagePreview === img 
+                                  ? 'border-[var(--accent-color)] scale-105 shadow' 
+                                  : 'border-transparent opacity-70 hover:opacity-100'
+                              }`}
+                            >
+                              <img src={img} alt={`Slide ${i + 1}`} className="w-full h-full object-cover" />
+                              <span className="absolute bottom-0 right-0 bg-black/80 text-[8px] font-mono text-white px-1">
+                                {i + 1}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="h-36 flex flex-col items-center justify-center text-[var(--text-muted)] space-y-2">

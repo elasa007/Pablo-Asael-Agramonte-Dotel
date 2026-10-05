@@ -26,6 +26,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   onSelectProfilePhoto
 }) => {
   const { theme } = useTheme();
+  const [confirmHideSection, setConfirmHideSection] = React.useState(false);
 
   return (
     <section className="relative min-h-[92vh] flex items-center justify-center overflow-hidden border-b border-[var(--border-subtle)] py-16 lg:py-24 transition-colors duration-300">
@@ -62,13 +63,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               </button>
               {onDeleteSection && (
                 <button
-                  onClick={() => {
-                    if (confirm('¿Deseas ocultar/borrar la sección Portada de la vista pública? Podrás restaurarla en el Gestor de Secciones.')) {
-                      onDeleteSection();
-                    }
-                  }}
+                  type="button"
+                  onClick={onDeleteSection}
                   className="px-3 py-1.5 bg-red-950/20 hover:bg-red-600 text-red-400 hover:text-white text-xs font-mono rounded-lg border border-red-500/30 transition-colors cursor-pointer flex items-center gap-1.5"
-                  title="Ocultar sección Portada"
+                  title="Ocultar sección Portada de la vista pública"
                 >
                   <span>Ocultar Sección</span>
                 </button>

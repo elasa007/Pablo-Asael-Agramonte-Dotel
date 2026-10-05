@@ -10,7 +10,7 @@
  */
 
 export interface EmbedMediaInfo {
-  type: 'youtube' | 'vimeo' | 'drive' | 'direct_video' | 'google_slides' | 'pdf' | 'pptx' | 'generic_doc' | 'unknown';
+  type: 'youtube' | 'vimeo' | 'drive' | 'direct_video' | 'google_slides' | 'canva' | 'pdf' | 'pptx' | 'generic_doc' | 'unknown';
   embedUrl: string;
   originalUrl: string;
   title?: string;
@@ -164,7 +164,19 @@ export function parseDocumentUrl(url?: string, docTypeHint?: string): EmbedMedia
     };
   }
 
-  // 4. Direct PDF file
+  // 4. Canva Presentation or Design Public Link
+  const canvaMatch = trimmed.match(/canva\.com\/design\/([a-zA-Z0-9_-]+)/i);
+  if (canvaMatch || docTypeHint === 'canva' || trimmed.includes('canva.com')) {
+    const embed = formatCanvaEmbedUrl(trimmed);
+    return {
+      type: 'canva',
+      embedUrl: embed,
+      originalUrl: trimmed,
+      title: 'Presentación en Canva'
+    };
+  }
+
+  // 5. Direct PDF file
   if (/\.pdf(\?.*)?$/i.test(trimmed) || docTypeHint === 'pdf') {
     return {
       type: 'pdf',
@@ -174,7 +186,7 @@ export function parseDocumentUrl(url?: string, docTypeHint?: string): EmbedMedia
     };
   }
 
-  // 5. PowerPoint Presentation (.pptx, .ppt)
+  // 6. PowerPoint Presentation (.pptx, .ppt)
   if (/\.(pptx|ppt)(\?.*)?$/i.test(trimmed) || docTypeHint === 'pptx') {
     return {
       type: 'pptx',
@@ -184,13 +196,43 @@ export function parseDocumentUrl(url?: string, docTypeHint?: string): EmbedMedia
     };
   }
 
-  // 6. Generic web documents
+  // 7. Generic web documents
   return {
     type: 'generic_doc',
     embedUrl: trimmed,
     originalUrl: trimmed,
     title: 'Documento Digital'
   };
+}
+
+/**
+ * Transforms any Canva public view/design URL into a clean embed URL
+ */
+export function formatCanvaEmbedUrl(url: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+
+  // If already contains /view?embed
+  if (trimmed.includes('/view?embed') || trimmed.includes('/watch?embed')) {
+    return trimmed;
+  }
+
+  // Extract Canva design ID
+  const match = trimmed.match(/canva\.com\/design\/([a-zA-Z0-9_-]+)/i);
+  if (match && match[1]) {
+    return `https://www.canva.com/design/${match[1]}/view?embed`;
+  }
+
+  // Clean trailing query/hash before formatting
+  const cleanUrl = trimmed.split('?')[0].split('#')[0].replace(/\/+$/, '');
+
+  // If URL ends with /view, /watch, or /edit
+  if (/\/(view|watch|edit)$/i.test(cleanUrl)) {
+    return cleanUrl.replace(/\/(view|watch|edit)$/i, '/view?embed');
+  }
+
+  // Otherwise append /view?embed
+  return `${cleanUrl}/view?embed`;
 }
 
 /**

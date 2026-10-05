@@ -279,6 +279,7 @@ function PortfolioApp() {
         setCurrentView={setCurrentView}
         isAdminAuthenticated={isAdmin}
         onOpenArchitectureDocs={() => setIsArchitectureModalOpen(true)}
+        sectionVisibility={sectionVisibility}
       />
 
       {/* Main Content Area */}
@@ -444,13 +445,14 @@ function PortfolioApp() {
               </div>
             ) : null}
 
-            {/* 5. Documentos & Presentaciones (PDF, PPTX, Google Slides, Google Drive) */}
+            {/* 5. Diapositivas Corporativas & Decks (Canva, Google Slides, PowerPoint, PDF) */}
             {sectionVisibility.documents ? (
               <DocumentsSection
                 documents={documents}
                 isAdmin={isAdmin}
-                title={profile.documentsTitle || "DOCUMENTOS & PRESENTACIONES"}
-                subtitle={profile.documentsSubtitle || "Explora y visualiza dossiers editoriales, carpetas de arte en PDF, presentaciones ejecutivas en PowerPoint (PPTX) y decks interactivos en Google Slides."}
+                title={profile.documentsTitle || "DIAPOSITIVAS CORPORATIVAS"}
+                subtitle={profile.documentsSubtitle || "Presentaciones estratégicas, pitch decks corporativos, slides comerciales y reportes ejecutivos en formatos interactivos (Canva, Google Slides, PowerPoint y PDF)."}
+                kicker={profile.documentsKicker || "DIAPOSITIVAS & DECKS CORPORATIVOS"}
                 onViewDocument={(d) => setActiveModalDocument(d)}
                 onAddDocument={() => {
                   setEditingDocument(null);
@@ -463,18 +465,30 @@ function PortfolioApp() {
                 onDeleteDocument={handleDocumentDelete}
                 onEditSection={() => openSectionModalWithTab('documents')}
                 onDeleteSection={() => handleToggleSection('documents')}
+                onSaveTitles={(newTitle, newSubtitle, newKicker) => {
+                  const updated = SiteContentService.updateProfile({
+                    documentsTitle: newTitle,
+                    documentsSubtitle: newSubtitle,
+                    documentsKicker: newKicker
+                  });
+                  setProfile(updated);
+                }}
+                onViewInGallery={() => {
+                  setSelectedCategory('Diapositivas');
+                  scrollToSection('galeria');
+                }}
               />
             ) : isAdmin ? (
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 my-4 bg-red-950/20 border border-dashed border-red-500/40 rounded-xl flex items-center justify-between">
                 <span className="text-xs font-mono text-red-400">
-                  🚫 Sección Documentos & Slides oculta/borrada de la vista pública
+                  🚫 Sección Diapositivas Corporativas oculta/borrada de la vista pública
                 </span>
                 <button
                   onClick={() => handleToggleSection('documents')}
                   className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-mono rounded flex items-center gap-1 cursor-pointer"
                 >
                   <Eye className="w-3.5 h-3.5" />
-                  <span>Restaurar Documentos</span>
+                  <span>Restaurar Diapositivas</span>
                 </button>
               </div>
             ) : null}

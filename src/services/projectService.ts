@@ -10,6 +10,12 @@ const INITIAL_PROJECTS: Project[] = [
     client: 'Atelier Monochrome',
     year: '2026',
     imageUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=1200&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?auto=format&fit=crop&w=1200&q=80'
+    ],
     documentUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
     documentType: 'pdf',
     documentName: 'Monografia-Noir-Archive-2026.pdf',
@@ -26,6 +32,10 @@ const INITIAL_PROJECTS: Project[] = [
     client: 'Pulse Footwear Corp',
     year: '2026',
     imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80'
+    ],
     videoUrl: 'https://vimeo.com/76979871',
     videoPlatform: 'vimeo',
     tags: ['Social Media', 'Motion 3D', 'Vimeo', 'Viral Content'],
@@ -41,6 +51,11 @@ const INITIAL_PROJECTS: Project[] = [
     client: 'Vogue Man Preview',
     year: '2025',
     imageUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=1200&q=80'
+    ],
     tags: ['Fotografía', '35mm', 'Retrato', 'Chiaroscuro'],
     featured: true,
     aspectRatio: '4:3',
@@ -54,6 +69,11 @@ const INITIAL_PROJECTS: Project[] = [
     client: 'Valkyrie Botanics',
     year: '2026',
     imageUrl: 'https://images.unsplash.com/photo-1600132806370-bf17e65e942f?auto=format&fit=crop&w=1200&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1600132806370-bf17e65e942f?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80'
+    ],
     documentUrl: 'https://docs.google.com/presentation/d/1BfS_Z_yG2s1X9e_8/preview',
     documentType: 'google_slides',
     documentName: 'Brand-Manual-Valkyrie-Botanics.pptx',
@@ -70,6 +90,10 @@ const INITIAL_PROJECTS: Project[] = [
     client: 'Studio Orbital',
     year: '2025',
     imageUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=1200&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1200&q=80'
+    ],
     tags: ['Ilustración', 'Concept Art', 'Sci-Fi', 'Matte Painting'],
     featured: true,
     aspectRatio: '16:9',
@@ -83,12 +107,56 @@ const INITIAL_PROJECTS: Project[] = [
     client: 'Maison Électrique Paris',
     year: '2026',
     imageUrl: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=1200&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=1200&q=80'
+    ],
     videoUrl: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
     videoPlatform: 'youtube',
     tags: ['Video', 'Fashion Film', 'YouTube 4K', 'Anamórfico'],
     featured: true,
     aspectRatio: '16:9',
     createdAt: Date.now() - 1000 * 60 * 60 * 24 * 1
+  },
+  {
+    id: 'proj_deck_01',
+    title: 'MASTER PITCH DECK CORPORATIVO 2026',
+    category: 'Diapositivas',
+    description: 'Deck ejecutivo corporativo para rondas de inversión y comités directivos. Diseño de diapositivas interactivas en Canva y PowerPoint con métricas de crecimiento, arquitectura de producto y roadmap financiero.',
+    client: 'Junta Directiva Corporativa',
+    year: '2026',
+    imageUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80'
+    ],
+    documentUrl: 'https://www.canva.com/design/DAGR5W4Y2vU/view?embed',
+    documentType: 'canva',
+    documentName: 'Pitch-Deck-Estrategico-2026.canva',
+    tags: ['Diapositivas', 'Canva Slides', 'Pitch Deck', 'Corporativo', 'Presentación'],
+    featured: true,
+    aspectRatio: '16:9',
+    createdAt: Date.now() - 1000 * 60 * 60 * 24 * 14
+  },
+  {
+    id: 'proj_deck_02',
+    title: 'KEYNOTE CORPORATIVO & PROPUESTA COMERCIAL B2B',
+    category: 'Diapositivas',
+    description: 'Presentación corporativa de alto impacto para captación de cuentas institucionales. Diapositivas diseñadas en Google Slides y PowerPoint con infografías de retorno de inversión y catálogo de servicios.',
+    client: 'BanReservas Multimedia',
+    year: '2025',
+    imageUrl: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1200&q=80'
+    ],
+    documentUrl: 'https://view.officeapps.live.com/op/embed.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2Fmozilla%2Fpdf.js%2Fmaster%2Fexamples%2Flearning%2Fhelloworld.pdf',
+    documentType: 'pptx',
+    documentName: 'Propuesta-Comercial-B2B.pptx',
+    tags: ['Diapositivas', 'PowerPoint', 'Keynote', 'B2B', 'Presentación PPTX'],
+    featured: true,
+    aspectRatio: '16:9',
+    createdAt: Date.now() - 1000 * 60 * 60 * 24 * 10
   }
 ];
 
@@ -103,7 +171,19 @@ export class ProjectService {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          const existingIds = new Set(parsed.map((p: any) => p.id));
+          const missingInitial = INITIAL_PROJECTS.filter(ip => !existingIds.has(ip.id));
+          const combined = [...parsed, ...missingInitial];
+          return combined.map((p: any) => {
+            if (!p.images || !Array.isArray(p.images) || p.images.length === 0) {
+              const initial = INITIAL_PROJECTS.find(ip => ip.id === p.id);
+              if (initial?.images) {
+                return { ...p, images: initial.images };
+              }
+              return { ...p, images: p.imageUrl ? [p.imageUrl] : [] };
+            }
+            return p;
+          });
         }
       }
     } catch {

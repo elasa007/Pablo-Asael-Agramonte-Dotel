@@ -291,7 +291,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
                   : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
               }`}
             >
-              5. Documentos & Slides
+              5. Diapositivas Corporativas
             </button>
             <button
               type="button"
@@ -694,16 +694,28 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
               </div>
             )}
 
-            {/* TAB: Documentos & Slides */}
+            {/* TAB: Diapositivas Corporativas */}
             {activeTab === 'documents' && (
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-mono uppercase text-[var(--text-muted)]">
-                    Título de la Sección de Documentos
+                    Kicker / Etiqueta Superior
                   </label>
                   <input
                     type="text"
-                    value={formData.documentsTitle || "DOCUMENTOS & PRESENTACIONES"}
+                    value={formData.documentsKicker || "DIAPOSITIVAS & DECKS CORPORATIVOS"}
+                    onChange={(e) => handleChange('documentsKicker', e.target.value)}
+                    className="w-full bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-xl px-4 py-2 text-xs font-mono text-[var(--text-primary)]"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-mono uppercase text-[var(--text-muted)]">
+                    Título de la Sección de Diapositivas
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.documentsTitle || "DIAPOSITIVAS CORPORATIVAS"}
                     onChange={(e) => handleChange('documentsTitle', e.target.value)}
                     className="w-full bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] font-bebas text-xl"
                   />
@@ -711,7 +723,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-mono uppercase text-[var(--text-muted)]">
-                    Subtítulo / Descripción de Documentos
+                    Subtítulo / Descripción de Diapositivas
                   </label>
                   <textarea
                     rows={3}

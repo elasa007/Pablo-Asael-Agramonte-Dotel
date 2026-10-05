@@ -19,7 +19,8 @@ import {
   Sliders
 } from 'lucide-react';
 import { DocumentItem } from '../types/portfolio';
-import { parseDocumentUrl, formatGoogleDrivePreviewUrl } from '../utils/mediaEmbed';
+import { parseDocumentUrl, formatGoogleDrivePreviewUrl, formatCanvaEmbedUrl } from '../utils/mediaEmbed';
+import { Palette } from 'lucide-react';
 
 interface DocumentViewerModalProps {
   document: DocumentItem | null;
@@ -35,6 +36,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({ docume
   if (!doc) return null;
 
   const docParsed = parseDocumentUrl(doc.fileUrl || doc.embedUrl, doc.type);
+  const isCanva = doc.type === 'canva' || doc.source === 'canva' || docParsed?.type === 'canva' || (doc.fileUrl && doc.fileUrl.includes('canva.com'));
   const isGoogleSlides = doc.type === 'google_slides' || docParsed?.type === 'google_slides';
   const isPPTX = doc.type === 'pptx' || docParsed?.type === 'pptx';
   const isPDF = doc.type === 'pdf' || docParsed?.type === 'pdf';
@@ -42,7 +44,9 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({ docume
 
   // Determine optimal iframe embed URL
   let embedUrl = doc.embedUrl || docParsed?.embedUrl || doc.fileUrl;
-  if (doc.fileUrl && doc.fileUrl.includes('drive.google.com')) {
+  if (isCanva) {
+    embedUrl = formatCanvaEmbedUrl(doc.fileUrl || doc.embedUrl);
+  } else if (doc.fileUrl && doc.fileUrl.includes('drive.google.com')) {
     embedUrl = formatGoogleDrivePreviewUrl(doc.fileUrl);
   } else if (isPPTX && !embedUrl.includes('officeapps') && !embedUrl.includes('docs.google.com/viewer')) {
     // If external URL, wrap with Microsoft Office online viewer or Google docs viewer
@@ -94,7 +98,9 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({ docume
           <div className="flex flex-wrap items-center justify-between px-6 py-3.5 border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] gap-3 shrink-0">
             <div className="flex items-center gap-3">
               <span className="p-2 rounded-xl bg-[var(--accent-color)]/15 text-[var(--accent-color)] border border-[var(--accent-color)]/30">
-                {isGoogleSlides || isPPTX ? (
+                {isCanva ? (
+                  <Palette className="w-4 h-4 text-[#00C4CC]" />
+                ) : isGoogleSlides || isPPTX ? (
                   <Presentation className="w-4 h-4" />
                 ) : (
                   <FileText className="w-4 h-4" />
@@ -104,10 +110,10 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({ docume
                 <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[var(--accent-color)] font-semibold">
                   <Sparkles className="w-3 h-3" />
                   <span>
-                    {isGoogleSlides ? 'Google Slides' : isPPTX ? 'PowerPoint (PPTX)' : isDrive ? 'Google Drive PDF' : 'Documento PDF'}
+                    {isCanva ? 'Canva Presentation' : isGoogleSlides ? 'Google Slides' : isPPTX ? 'PowerPoint (PPTX)' : isDrive ? 'Google Drive Deck' : 'Diapositivas PDF'}
                   </span>
                   <span className="text-[var(--text-muted)]">·</span>
-                  <span className="text-[var(--text-secondary)]">{doc.category || 'Dossier'}</span>
+                  <span className="text-[var(--text-secondary)]">{doc.category || 'Diapositivas'}</span>
                   {doc.year && (
                     <>
                       <span className="text-[var(--text-muted)]">·</span>
@@ -138,26 +144,53 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({ docume
                 </button>
               )}
 
-              {/* Download / Open External */}
-              <button
-                type="button"
-                onClick={handleDownload}
-                className="px-3 py-1.5 text-xs font-mono text-white bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
-                title="Descargar o abrir documento"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Descargar / Abrir</span>
-              </button>
+              {/* Open in Canva specifically or Download/Open */}
+              {isCanva ? (
+                <a
+                  href={doc.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 text-xs font-mono font-semibold text-black bg-[#00C4CC] hover:bg-[#00d8e0] rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+                  title="Abrir diseño directamente en Canva"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Abrir en Canva</span>
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  className="px-3 py-1.5 text-xs font-mono text-white bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
+                  title="Descargar o abrir documento"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Descargar / Abrir</span>
+                </button>
+              )}
 
-              {/* Copy share link */}
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-lg transition-colors cursor-pointer"
-                title="Copiar enlace del documento"
-              >
-                {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
-              </button>
+              {/* Copy share link with toast badge */}
+              <div className="relative">
+                {copied && (
+                  <span className="absolute -top-7 right-0 px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-mono whitespace-nowrap shadow-lg animate-fade-in z-30">
+                    ¡Enlace copiado!
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className={`p-2 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
+                    copied
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
+                  }`}
+                  title="Copiar y compartir enlace público (Canva / Drive / PPT)"
+                >
+                  {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+                  <span className="hidden md:inline text-xs font-mono">
+                    {copied ? '¡Copiado!' : 'Compartir'}
+                  </span>
+                </button>
+              </div>
 
               {/* Fullscreen toggle */}
               <button
@@ -254,7 +287,8 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({ docume
                   src={embedUrl}
                   title={doc.title}
                   className="w-full h-full border-0 bg-neutral-900"
-                  allow="autoplay; fullscreen"
+                  allow="autoplay; fullscreen; clipboard-read; clipboard-write; web-share"
+                  allowFullScreen
                 />
 
                 {/* Helpful bottom fallback bar */}
@@ -262,7 +296,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({ docume
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     <span>
-                      Visualizador Activo: {isGoogleSlides ? 'Google Slides Live Player' : isDrive ? 'Google Drive Viewer' : isPPTX ? 'PowerPoint Web' : 'Lector PDF Integrado'}
+                      Visualizador Activo: {isCanva ? 'Canva Embed Player' : isGoogleSlides ? 'Google Slides Live Player' : isDrive ? 'Google Drive Viewer' : isPPTX ? 'PowerPoint Web' : 'Lector PDF Integrado'}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
@@ -270,9 +304,11 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({ docume
                       href={doc.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[var(--accent-color)] hover:underline flex items-center gap-1"
+                      className={`hover:underline flex items-center gap-1 font-semibold ${
+                        isCanva ? 'text-[#00C4CC]' : 'text-[var(--accent-color)]'
+                      }`}
                     >
-                      <span>Abrir en pestaña nueva</span>
+                      <span>{isCanva ? 'Abrir en Canva' : 'Abrir en pestaña nueva'}</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   </div>

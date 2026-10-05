@@ -49,8 +49,9 @@ export const DEFAULT_SITE_PROFILE: SiteProfile = {
   gallerySubtitle: "Curaduría de proyectos de Asael Agramonte gestionados en tiempo real. Haz clic en cualquier pieza para examinar el caso de estudio y la ficha técnica.",
   videosTitle: "PRODUCCIÓN AUDIOVISUAL & SHOWREELS",
   videosSubtitle: "Dirección cinematográfica, edición de video, motion graphics y diseño sonoro. Proyectos transmitidos e integrados desde YouTube, Vimeo y Google Drive.",
-  documentsTitle: "DOCUMENTOS & PRESENTACIONES",
-  documentsSubtitle: "Explora y visualiza dossiers editoriales, carpetas de arte en PDF, presentaciones ejecutivas en PowerPoint (PPTX) y decks en Google Slides.",
+  documentsTitle: "DIAPOSITIVAS CORPORATIVAS",
+  documentsSubtitle: "Presentaciones estratégicas, pitch decks corporativos, slides comerciales y reportes ejecutivos en formatos interactivos (Canva, Google Slides, PowerPoint y PDF).",
+  documentsKicker: "DIAPOSITIVAS & DECKS CORPORATIVOS",
   experienceTitle: "TRAYECTORIA & EXPERIENCIA LABORAL",
   experienceSubtitle: "Trayectoria contrastada de Lic. Asael Agramonte en publicidad, dirección gráfica institucional, producción audiovisual y desarrollo web.",
   educationTitle: "FORMACIÓN ACADÉMICA & ESPECIALIZACIONES",
@@ -145,66 +146,82 @@ export const DEFAULT_VIDEOS: VideoItem[] = [
 export const DEFAULT_DOCUMENTS: DocumentItem[] = [
   {
     id: "doc_01",
-    title: "Dossier Editorial & Catálogo de Obras Seleccionadas",
-    type: "pdf",
-    source: "google_drive",
-    fileUrl: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs/preview",
-    embedUrl: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs/preview",
-    thumbnailUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
-    category: "Dossier",
-    size: "14.2 MB",
-    pageCount: "28 Páginas",
-    client: "Asael Agramonte Studio",
-    year: "2026",
-    description: "Publicación de gran formato con retícula suiza, tipografía editorial y casos de estudio de branding institucional y packaging.",
-    createdAt: 1710000000000
-  },
-  {
-    id: "doc_02",
-    title: "Deck Estratégico: Rediseño Visual & Campaña Multimedia",
+    title: "Master Pitch Deck: Estrategia de Expansión & Inversión 2026",
     type: "pptx",
     source: "url",
     fileUrl: "https://view.officeapps.live.com/op/embed.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2Fmozilla%2Fpdf.js%2Fmaster%2Fexamples%2Flearning%2Fhelloworld.pdf",
     embedUrl: "https://view.officeapps.live.com/op/embed.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2Fmozilla%2Fpdf.js%2Fmaster%2Fexamples%2Flearning%2Fhelloworld.pdf",
     thumbnailUrl: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=800&q=80",
     category: "Presentación",
-    size: "8.6 MB",
-    pageCount: "16 Diapositivas",
-    client: "UNICARIBE Institucional",
+    size: "PowerPoint PPTX · 12.4 MB",
+    pageCount: "32 Diapositivas",
+    client: "Junta Directiva Corporativa",
+    year: "2026",
+    description: "Deck ejecutivo de alta dirección en PowerPoint (PPTX) con proyecciones financieras, arquitectura de producto y roadmap estratégico.",
+    createdAt: 1710000000000
+  },
+  {
+    id: "doc_02",
+    title: "Deck Estratégico: Rediseño Visual & Campaña BanReservas",
+    type: "pptx",
+    source: "url",
+    fileUrl: "https://view.officeapps.live.com/op/embed.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2Fmozilla%2Fpdf.js%2Fmaster%2Fexamples%2Flearning%2Fhelloworld.pdf",
+    embedUrl: "https://view.officeapps.live.com/op/embed.aspx?src=https%3A%2F%2Fraw.githubusercontent.com%2Fmozilla%2Fpdf.js%2Fmaster%2Fexamples%2Flearning%2Fhelloworld.pdf",
+    thumbnailUrl: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=800&q=80",
+    category: "Presentación",
+    size: "PowerPoint PPTX · 8.6 MB",
+    pageCount: "24 Diapositivas",
+    client: "BanReservas Multimedia",
     year: "2025",
-    description: "Presentación ejecutiva en PowerPoint (PPTX) con diapositivas de auditoría de marca, sistema cromático y aplicaciones en medios masivos.",
+    description: "Presentación ejecutiva corporativa en PowerPoint con auditoría de marca, diseño de diapositivas animadas y sistema cromático.",
     createdAt: 1709000000000
   },
   {
     id: "doc_03",
-    title: "Manual de Marca Interactivo & Guía de Estilos",
+    title: "Presentación Institucional & Rendición de Cuentas (Google Slides)",
     type: "google_slides",
     source: "google_drive",
     fileUrl: "https://docs.google.com/presentation/d/1Y3W9a2wE6D8xZ7k0/edit",
     embedUrl: "https://docs.google.com/presentation/d/1_sample_deck_id/embed?start=false&loop=false&delayms=3000",
     thumbnailUrl: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80",
-    category: "Manual de Marca",
+    category: "Presentación",
     size: "Nube Google Slides",
-    pageCount: "24 Slides",
-    client: "World Sign",
-    year: "2024",
-    description: "Presentación de Google Slides totalmente interactiva con lineamientos de logotipo, zona de seguridad, paletas HEX/Pantone y tipografías.",
+    pageCount: "28 Slides",
+    client: "UNICARIBE Institucional",
+    year: "2025",
+    description: "Diapositivas interactivas en Google Slides con métricas de impacto, gráficos corporativos y balance de gestión académica y tecnológica.",
     createdAt: 1708000000000
   },
   {
+    id: "doc_canva_01",
+    title: "Pitch Deck & Dirección Audiovisual 2026 (Canva)",
+    type: "canva",
+    source: "canva",
+    fileUrl: "https://www.canva.com/design/DAGR5W4Y2vU/view",
+    embedUrl: "https://www.canva.com/design/DAGR5W4Y2vU/view?embed",
+    thumbnailUrl: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80",
+    category: "Presentación",
+    size: "Canva Presentation Cloud",
+    pageCount: "20 Slides",
+    client: "Dirección Creativa",
+    year: "2026",
+    description: "Presentación multimedia y deck interactivo en Canva con diapositivas animadas, propuesta estética y desglose de producción en tiempo real.",
+    createdAt: 1709000000000
+  },
+  {
     id: "doc_04",
-    title: "Curriculum Vitae Oficial & Hoja de Vida · Lic. Asael Agramonte",
+    title: "Propuesta Comercial & Keynote Deck de Servicios B2B",
     type: "pdf",
     source: "google_drive",
     fileUrl: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs/preview",
     embedUrl: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs/preview",
-    thumbnailUrl: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=800&q=80",
-    category: "CV",
-    size: "2.4 MB",
-    pageCount: "3 Páginas",
-    client: "Perfil Profesional",
+    thumbnailUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80",
+    category: "Presentación",
+    size: "Keynote / PDF Deck · 4.8 MB",
+    pageCount: "18 Diapositivas",
+    client: "Clientes Corporativos",
     year: "2026",
-    description: "Documento oficial en PDF con la síntesis académica en UNAPEC y UNICARIBE, historial de puestos, diplomados tecnológicos y referencias directas.",
+    description: "Diapositivas ejecutivas en formato horizontal 16:9 con desglose de paquetes de servicios, metodología de diseño y casos de éxito comercial.",
     createdAt: 1707000000000
   }
 ];
@@ -563,6 +580,13 @@ export class SiteContentService {
     } catch (e) {
       console.error(e);
     }
+  }
+
+  public static updateProfile(updates: Partial<SiteProfile>): SiteProfile {
+    const current = this.getProfile();
+    const updated = { ...current, ...updates };
+    this.saveProfile(updated);
+    return updated;
   }
 
   public static updateProfilePhoto(avatarUrl: string): void {

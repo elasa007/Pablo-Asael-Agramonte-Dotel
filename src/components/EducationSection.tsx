@@ -87,37 +87,14 @@ export const EducationSection: React.FC<EducationSectionProps> = ({
                 </button>
               )}
               {onDeleteSection && (
-                confirmHideSection ? (
-                  <div className="flex items-center gap-1.5 bg-red-950/40 border border-red-500/40 px-2 py-1 rounded-lg">
-                    <span className="text-[11px] font-mono text-red-400">¿Ocultar sección?</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onDeleteSection();
-                        setConfirmHideSection(false);
-                      }}
-                      className="px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-mono font-bold rounded cursor-pointer"
-                    >
-                      Sí
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmHideSection(false)}
-                      className="px-2 py-0.5 text-neutral-400 hover:text-white text-[10px] font-mono rounded cursor-pointer"
-                    >
-                      No
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmHideSection(true)}
-                    className="px-3 py-1.5 bg-red-950/20 hover:bg-red-600 text-red-400 hover:text-white text-xs font-mono rounded-lg border border-red-500/30 transition-colors cursor-pointer flex items-center gap-1.5"
-                    title="Ocultar sección Formación"
-                  >
-                    <span>Ocultar Sección</span>
-                  </button>
-                )
+                <button
+                  type="button"
+                  onClick={onDeleteSection}
+                  className="px-3 py-1.5 bg-red-950/20 hover:bg-red-600 text-red-400 hover:text-white text-xs font-mono rounded-lg border border-red-500/30 transition-colors cursor-pointer flex items-center gap-1.5"
+                  title="Ocultar sección Formación de la vista pública"
+                >
+                  <span>Ocultar Sección</span>
+                </button>
               )}
             </div>
           </div>

@@ -11,7 +11,10 @@ import {
   FileText, 
   Presentation, 
   ExternalLink,
-  Play
+  Play,
+  Plus,
+  Layers,
+  Star
 } from 'lucide-react';
 import { Project, SpecialtyCategory } from '../types/portfolio';
 import { parseVideoUrl, parseDocumentUrl, formatGoogleDrivePreviewUrl } from '../utils/mediaEmbed';
@@ -49,6 +52,13 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
   const [description, setDescription] = useState(project.description);
   const [tagsInput, setTagsInput] = useState(project.tags.join(', '));
   const [imageUrl, setImageUrl] = useState(project.imageUrl);
+  const [images, setImages] = useState<string[]>(() => {
+    if (Array.isArray(project.images) && project.images.length > 0) {
+      return project.images;
+    }
+    return project.imageUrl ? [project.imageUrl] : [];
+  });
+  const [newImageInputUrl, setNewImageInputUrl] = useState('');
   const [featured, setFeatured] = useState(Boolean(project.featured));
   
   // Video and Document fields
@@ -58,6 +68,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
   const [documentType, setDocumentType] = useState<string>(project.documentType || 'none');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const multiFileInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,9 +77,71 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
     const reader = new FileReader();
     reader.onload = () => {
-      setImageUrl(reader.result as string);
+      const result = reader.result as string;
+      setImageUrl(result);
+      setImages(prev => {
+        if (prev.length === 0) return [result];
+        const next = [...prev];
+        next[0] = result;
+        return next;
+      });
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleMultipleImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileList = Array.from(files);
+    const readers = fileList.map(file => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(readers).then(newImages => {
+      setImages(prev => {
+        const updated = [...prev, ...newImages];
+        if (!imageUrl && updated.length > 0) {
+          setImageUrl(updated[0]);
+        }
+        return updated;
+      });
+    });
+  };
+
+  const handleAddImageUrl = () => {
+    if (!newImageInputUrl.trim()) return;
+    const url = newImageInputUrl.trim();
+    setImages(prev => {
+      const updated = [...prev, url];
+      if (!imageUrl) setImageUrl(url);
+      return updated;
+    });
+    setNewImageInputUrl('');
+  };
+
+  const handleSetCover = (index: number) => {
+    setImages(prev => {
+      const target = prev[index];
+      const rest = prev.filter((_, i) => i !== index);
+      const updated = [target, ...rest];
+      setImageUrl(target);
+      return updated;
+    });
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImages(prev => {
+      const updated = prev.filter((_, i) => i !== index);
+      if (index === 0 && updated.length > 0) {
+        setImageUrl(updated[0]);
+      }
+      return updated;
+    });
   };
 
   const handlePdfUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,6 +183,9 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       .map(t => t.trim())
       .filter(t => t.length > 0);
 
+    const finalImages = images.length > 0 ? images : (imageUrl ? [imageUrl] : []);
+    const coverImage = finalImages[0] || imageUrl;
+
     onSave(project.id, {
       title,
       category,
@@ -117,7 +193,8 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
       year,
       description,
       tags,
-      imageUrl,
+      imageUrl: coverImage,
+      images: finalImages,
       videoUrl: videoUrl.trim() || undefined,
       videoPlatform: videoPreview ? (videoPreview.type as any) : undefined,
       documentUrl: documentUrl.trim() || undefined,
@@ -224,46 +301,125 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
               </div>
             </div>
 
-            {/* Image Preview & Replacement */}
-            <div className="space-y-2">
-              <label className="text-xs font-mono uppercase text-[var(--text-muted)] block">
-                Imagen de Portada del Proyecto
-              </label>
-              
-              <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl">
-                <div className="w-28 h-20 rounded-lg overflow-hidden bg-black/40 border border-[var(--border-subtle)] shrink-0 flex items-center justify-center">
-                  <img
-                    src={imageUrl}
-                    alt={title}
-                    className="w-full h-full object-cover"
-                  />
+            {/* Carrusel de Imágenes & Galería Visual */}
+            <div className="p-4 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <label className="text-xs font-mono uppercase text-[var(--text-primary)] font-semibold flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-[var(--accent-color)]" />
+                    <span>Carrusel de Imágenes & Galería ({images.length} fotos)</span>
+                  </label>
+                  <p className="text-[11px] text-[var(--text-muted)] font-mono mt-0.5">
+                    Carga múltiples imágenes para que tus visitantes puedan explorarlas en un carrusel interactivo.
+                  </p>
                 </div>
 
-                <div className="flex-1 space-y-2 w-full">
+                <div className="flex items-center gap-2">
                   <input
                     type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageFileChange}
+                    ref={multiFileInputRef}
+                    onChange={handleMultipleImagesUpload}
+                    multiple
                     accept="image/*"
                     className="hidden"
                   />
                   <button
                     type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-3 py-1.5 bg-[var(--bg-elevated)] hover:bg-[var(--accent-color)] hover:text-white text-xs font-medium rounded-lg border border-[var(--border-subtle)] transition-colors cursor-pointer flex items-center gap-1.5"
+                    onClick={() => multiFileInputRef.current?.click()}
+                    className="px-3 py-1.5 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white text-xs font-mono rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
                   >
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Cambiar imagen desde disco</span>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Añadir varias fotos</span>
                   </button>
-                  <input
-                    type="text"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    placeholder="O pega URL de la imagen"
-                    className="w-full bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-color)]"
-                  />
                 </div>
               </div>
+
+              {/* Add by URL input */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="url"
+                  value={newImageInputUrl}
+                  onChange={(e) => setNewImageInputUrl(e.target.value)}
+                  placeholder="O pega URL de una imagen para el carrusel (ej: https://...)"
+                  className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-subtle)] rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-color)]"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddImageUrl();
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddImageUrl}
+                  className="px-3 py-1.5 bg-[var(--bg-elevated)] hover:bg-[var(--bg-primary)] text-[var(--text-primary)] text-xs font-mono rounded-lg border border-[var(--border-subtle)] transition-colors cursor-pointer shrink-0"
+                >
+                  + Agregar URL
+                </button>
+              </div>
+
+              {/* Preview Grid of Carousel Images */}
+              {images.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 pt-2">
+                  {images.map((img, idx) => (
+                    <div
+                      key={idx}
+                      className={`group relative aspect-[4/3] rounded-lg overflow-hidden border transition-all ${
+                        idx === 0 
+                          ? 'border-[var(--accent-color)] ring-2 ring-[var(--accent-color)]/30' 
+                          : 'border-[var(--border-subtle)] hover:border-[var(--border-strong)]'
+                      } bg-black/60`}
+                    >
+                      <img
+                        src={img}
+                        alt={`Slide ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+
+                      {/* Cover Badge on Image 0 */}
+                      {idx === 0 ? (
+                        <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-[var(--accent-color)] text-white text-[9px] font-mono font-bold flex items-center gap-1 shadow">
+                          <Star className="w-2.5 h-2.5 fill-white" />
+                          <span>Portada</span>
+                        </span>
+                      ) : (
+                        <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/70 text-neutral-300 text-[9px] font-mono">
+                          #{idx + 1}
+                        </span>
+                      )}
+
+                      {/* Action buttons overlay on hover */}
+                      <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-1">
+                        {idx !== 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleSetCover(idx)}
+                            className="px-2 py-1 bg-white/20 hover:bg-[var(--accent-color)] text-white text-[10px] font-mono rounded transition-colors cursor-pointer w-full text-center"
+                            title="Establecer como portada principal"
+                          >
+                            Hacer portada
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="p-1 bg-red-600/80 hover:bg-red-600 text-white rounded transition-colors cursor-pointer"
+                          title="Eliminar esta foto del carrusel"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-6 text-center border border-dashed border-[var(--border-subtle)] rounded-xl bg-[var(--bg-primary)]/50">
+                  <ImageIcon className="w-8 h-8 text-[var(--text-muted)] mx-auto mb-2 opacity-50" />
+                  <p className="text-xs text-[var(--text-muted)] font-mono">
+                    No hay imágenes cargadas en el carrusel.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* NEW: Video Links Section (YouTube, Vimeo, Google Drive) */}

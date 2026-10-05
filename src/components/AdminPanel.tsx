@@ -452,8 +452,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'
           }`}
         >
-          <FileText className="w-3.5 h-3.5" />
-          <span>Documentos & Slides ({documents.length})</span>
+          <Presentation className="w-3.5 h-3.5" />
+          <span>Diapositivas Corporativas ({documents.length})</span>
         </button>
 
         <button
@@ -664,7 +664,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                   <div>
                     <span className="text-[10px] font-mono text-[var(--accent-color)] uppercase font-semibold">
-                      {doc.category || 'Dossier'} · {doc.year || '2026'}
+                      {doc.category || 'Diapositivas'} · {doc.year || '2026'}
                     </span>
                     <h4 className="font-bebas text-lg text-[var(--text-primary)] tracking-wide line-clamp-1">
                       {doc.title}
@@ -1176,7 +1176,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="font-bebas text-2xl text-[var(--text-primary)]">5. Documentos & Slides</span>
+                    <span className="font-bebas text-2xl text-[var(--text-primary)]">5. Diapositivas Corporativas</span>
                     <span className={`text-[10px] font-mono px-2 py-0.5 rounded uppercase font-semibold ${
                       sectionVisibility.documents 
                         ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
@@ -1186,7 +1186,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-[var(--text-secondary)] mt-1">
-                    Visualizador interactivo de PDF, presentaciones PowerPoint (PPTX) y Google Slides ({documents.length} archivos).
+                    Presentaciones ejecutivas, pitch decks en Canva, Google Slides y PowerPoint ({documents.length} presentaciones).
                   </p>
                 </div>
               </div>

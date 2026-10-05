@@ -81,13 +81,9 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                 {onDeleteSection && (
                   <button
                     type="button"
-                    onClick={() => {
-                      if (confirm('¿Deseas ocultar/borrar la sección Contacto de la vista pública? Podrás restaurarla en el Gestor de Secciones.')) {
-                        onDeleteSection();
-                      }
-                    }}
+                    onClick={onDeleteSection}
                     className="px-3 py-1.5 bg-red-950/20 hover:bg-red-600 text-red-400 hover:text-white text-xs font-mono rounded-lg border border-red-500/30 transition-colors cursor-pointer flex items-center gap-1.5"
-                    title="Ocultar sección Contacto"
+                    title="Ocultar sección Contacto de la vista pública"
                   >
                     <span>Ocultar Sección</span>
                   </button>

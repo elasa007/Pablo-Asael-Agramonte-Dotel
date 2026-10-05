@@ -5,6 +5,7 @@ export type SpecialtyCategory =
   | 'Ilustración'
   | 'Branding'
   | 'Video'
+  | 'Presentaciones'
   | string;
 
 export interface Project {
@@ -15,10 +16,11 @@ export interface Project {
   client: string;
   year: string;
   imageUrl: string;
+  images?: string[]; // Array of gallery images for carousel
   videoUrl?: string;
   videoPlatform?: 'youtube' | 'vimeo' | 'drive' | 'direct' | 'none';
   documentUrl?: string;
-  documentType?: 'pdf' | 'pptx' | 'google_slides' | 'google_drive' | 'none';
+  documentType?: 'pdf' | 'pptx' | 'google_slides' | 'google_drive' | 'canva' | 'none';
   documentName?: string;
   aspectRatio?: string;
   tags: string[];
@@ -45,8 +47,8 @@ export interface VideoItem {
 export interface DocumentItem {
   id: string;
   title: string;
-  type: 'pdf' | 'pptx' | 'google_slides' | 'google_drive';
-  source: 'upload' | 'google_drive' | 'url';
+  type: 'pdf' | 'pptx' | 'google_slides' | 'google_drive' | 'canva';
+  source: 'upload' | 'google_drive' | 'url' | 'canva';
   fileUrl: string;
   embedUrl: string;
   thumbnailUrl?: string;
@@ -160,6 +162,7 @@ export interface SiteProfile {
   videosSubtitle?: string;
   documentsTitle?: string;
   documentsSubtitle?: string;
+  documentsKicker?: string;
   experienceTitle?: string;
   experienceSubtitle?: string;
   educationTitle?: string;

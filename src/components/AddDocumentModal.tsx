@@ -12,10 +12,11 @@ import {
   Link as LinkIcon, 
   Trash2, 
   FileUp, 
-  ExternalLink 
+  ExternalLink,
+  Palette
 } from 'lucide-react';
 import { DocumentItem } from '../types/portfolio';
-import { parseDocumentUrl, formatGoogleDrivePreviewUrl } from '../utils/mediaEmbed';
+import { parseDocumentUrl, formatGoogleDrivePreviewUrl, formatCanvaEmbedUrl } from '../utils/mediaEmbed';
 
 interface AddDocumentModalProps {
   isOpen: boolean;
@@ -32,17 +33,18 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
   onSave,
   onDelete
 }) => {
-  const [activeTab, setActiveTab] = useState<'upload' | 'google_drive'>('upload');
+  const [activeTab, setActiveTab] = useState<'upload' | 'canva' | 'google_drive'>('upload');
   
   // Form fields
   const [title, setTitle] = useState('');
-  const [docType, setDocType] = useState<'pdf' | 'pptx' | 'google_slides' | 'google_drive'>('pdf');
+  const [docType, setDocType] = useState<'pdf' | 'pptx' | 'google_slides' | 'google_drive' | 'canva'>('pdf');
   const [fileUrl, setFileUrl] = useState('');
   const [driveUrl, setDriveUrl] = useState('');
+  const [canvaUrl, setCanvaUrl] = useState('');
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState('');
   const [pageCount, setPageCount] = useState('');
-  const [category, setCategory] = useState('Dossier');
+  const [category, setCategory] = useState('Diapositivas');
   const [client, setClient] = useState('');
   const [year, setYear] = useState('2026');
   const [description, setDescription] = useState('');
@@ -56,7 +58,7 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
       setTitle(docToEdit.title);
       setDocType(docToEdit.type);
       setFileUrl(docToEdit.fileUrl);
-      setCategory(docToEdit.category || 'Dossier');
+      setCategory(docToEdit.category || 'Diapositivas');
       setClient(docToEdit.client || '');
       setYear(docToEdit.year || '2026');
       setDescription(docToEdit.description || '');
@@ -64,7 +66,10 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
       setPageCount(docToEdit.pageCount ? String(docToEdit.pageCount) : '');
       setThumbnailUrl(docToEdit.thumbnailUrl || '');
 
-      if (docToEdit.source === 'google_drive' || docToEdit.fileUrl.includes('google.com')) {
+      if (docToEdit.type === 'canva' || docToEdit.source === 'canva' || docToEdit.fileUrl.includes('canva.com')) {
+        setActiveTab('canva');
+        setCanvaUrl(docToEdit.fileUrl);
+      } else if (docToEdit.source === 'google_drive' || docToEdit.fileUrl.includes('google.com')) {
         setActiveTab('google_drive');
         setDriveUrl(docToEdit.fileUrl);
       } else {
@@ -72,13 +77,14 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
       }
     } else {
       setTitle('');
-      setDocType('pdf');
+      setDocType('canva');
       setFileUrl('');
       setDriveUrl('');
+      setCanvaUrl('');
       setFileName('');
       setFileSize('');
-      setPageCount('12 Páginas');
-      setCategory('Dossier');
+      setPageCount('20 Slides');
+      setCategory('Diapositivas');
       setClient('');
       setYear('2026');
       setDescription('');
@@ -146,9 +152,18 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
 
     let finalFileUrl = '';
     let finalEmbedUrl = '';
-    let source: 'upload' | 'google_drive' | 'url' = 'upload';
+    let source: 'upload' | 'google_drive' | 'url' | 'canva' = 'upload';
 
-    if (activeTab === 'google_drive') {
+    if (activeTab === 'canva') {
+      if (!canvaUrl.trim()) {
+        setError('Por favor ingresa el enlace público de Canva.');
+        return;
+      }
+      source = 'canva';
+      finalFileUrl = canvaUrl.trim();
+      finalEmbedUrl = formatCanvaEmbedUrl(finalFileUrl);
+      setDocType('canva');
+    } else if (activeTab === 'google_drive') {
       if (!driveUrl.trim()) {
         setError('Por favor ingresa el enlace de Google Drive o Google Slides.');
         return;
@@ -170,18 +185,19 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
       pdf: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80',
       pptx: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=800&q=80',
       google_slides: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80',
+      canva: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=800&q=80',
       google_drive: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=800&q=80'
     };
 
     onSave({
       title: title.trim(),
-      type: docType,
+      type: activeTab === 'canva' ? 'canva' : docType,
       source,
       fileUrl: finalFileUrl,
       embedUrl: finalEmbedUrl,
-      thumbnailUrl: thumbnailUrl || defaultThumbs[docType] || defaultThumbs.pdf,
-      size: fileSize || (activeTab === 'google_drive' ? 'Nube Google Drive' : '1.5 MB'),
-      pageCount: pageCount.trim() || '10 Páginas',
+      thumbnailUrl: thumbnailUrl || defaultThumbs[activeTab === 'canva' ? 'canva' : docType] || defaultThumbs.pdf,
+      size: fileSize || (activeTab === 'canva' ? 'Canva Cloud' : activeTab === 'google_drive' ? 'Nube Google Drive' : '1.5 MB'),
+      pageCount: pageCount.trim() || '15 Slides',
       category: category.trim(),
       client: client.trim(),
       year: year.trim(),
@@ -213,7 +229,9 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
           <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)]">
             <div className="flex items-center gap-2.5">
               <span className="p-2 rounded-lg bg-[var(--accent-color)]/15 text-[var(--accent-color)]">
-                {docType === 'google_slides' || docType === 'pptx' ? (
+                {activeTab === 'canva' || docType === 'canva' ? (
+                  <Palette className="w-4 h-4 text-[#00C4CC]" />
+                ) : docType === 'google_slides' || docType === 'pptx' ? (
                   <Presentation className="w-4 h-4" />
                 ) : (
                   <FileText className="w-4 h-4" />
@@ -224,7 +242,7 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
                   {docToEdit ? 'Editar Documento' : 'Añadir Documento / Presentación'}
                 </h3>
                 <p className="text-xs text-[var(--text-muted)] font-mono">
-                  Sube archivos PDF / PPTX locales o importa desde Google Drive & Slides
+                  Sube PDF/PPTX, conecta Canva o importa desde Google Drive & Slides
                 </p>
               </div>
             </div>
@@ -237,32 +255,55 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
             </button>
           </div>
 
-          {/* Tab Selector: Upload Local vs Google Drive Import */}
-          <div className="px-6 pt-4 border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)]/50 flex gap-2">
+          {/* Tab Selector: Upload Local vs Canva vs Google Drive Import */}
+          <div className="px-6 pt-4 border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)]/50 flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => setActiveTab('upload')}
-              className={`px-4 py-2.5 text-xs font-mono rounded-t-xl transition-all flex items-center gap-2 border-b-2 cursor-pointer ${
+              onClick={() => {
+                setActiveTab('upload');
+                if (docType === 'canva') setDocType('pdf');
+              }}
+              className={`px-3.5 py-2 text-xs font-mono rounded-t-xl transition-all flex items-center gap-1.5 border-b-2 cursor-pointer ${
                 activeTab === 'upload'
                   ? 'border-[var(--accent-color)] text-[var(--text-primary)] font-semibold bg-[var(--bg-primary)]'
                   : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               <FileUp className="w-3.5 h-3.5 text-[var(--accent-color)]" />
-              <span>1. Subir Archivo Local (PDF / PPTX)</span>
+              <span>1. Archivo Local (PDF/PPTX)</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveTab('google_drive')}
-              className={`px-4 py-2.5 text-xs font-mono rounded-t-xl transition-all flex items-center gap-2 border-b-2 cursor-pointer ${
+              onClick={() => {
+                setActiveTab('canva');
+                setDocType('canva');
+                if (!category || category === 'Dossier') setCategory('Presentación');
+              }}
+              className={`px-3.5 py-2 text-xs font-mono rounded-t-xl transition-all flex items-center gap-1.5 border-b-2 cursor-pointer ${
+                activeTab === 'canva'
+                  ? 'border-[#00C4CC] text-[var(--text-primary)] font-semibold bg-[var(--bg-primary)]'
+                  : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              <Palette className="w-3.5 h-3.5 text-[#00C4CC]" />
+              <span>2. Enlace de Canva</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('google_drive');
+                if (docType === 'canva') setDocType('google_slides');
+              }}
+              className={`px-3.5 py-2 text-xs font-mono rounded-t-xl transition-all flex items-center gap-1.5 border-b-2 cursor-pointer ${
                 activeTab === 'google_drive'
                   ? 'border-[var(--accent-color)] text-[var(--text-primary)] font-semibold bg-[var(--bg-primary)]'
                   : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]'
               }`}
             >
               <HardDrive className="w-3.5 h-3.5 text-[var(--accent-color)]" />
-              <span>2. Importar desde Google Drive / Slides</span>
+              <span>3. Google Drive / Slides</span>
             </button>
           </div>
 
@@ -312,6 +353,42 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
                       Peso: {fileSize}
                     </span>
                   )}
+                </div>
+              </div>
+            ) : activeTab === 'canva' ? (
+              /* TAB 2: Canva Public Link Importer */
+              <div className="space-y-3">
+                <label className="text-xs font-mono uppercase tracking-wider text-[var(--text-secondary)] font-semibold flex items-center justify-between">
+                  <span>Enlace Público de Canva (Presentación o Diseño) *</span>
+                  <span className="text-[#00C4CC] font-mono normal-case font-bold flex items-center gap-1">
+                    <Palette className="w-3.5 h-3.5" />
+                    <span>Canva Embed</span>
+                  </span>
+                </label>
+                
+                <div className="relative">
+                  <LinkIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
+                  <input
+                    type="url"
+                    value={canvaUrl}
+                    onChange={(e) => {
+                      setCanvaUrl(e.target.value);
+                      setDocType('canva');
+                      if (!category || category === 'Dossier') setCategory('Presentación');
+                    }}
+                    placeholder="https://www.canva.com/design/DAG.../view"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-sm focus:border-[#00C4CC] focus:outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="p-3 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl text-xs text-[var(--text-secondary)] space-y-1">
+                  <p className="font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#00C4CC]" />
+                    <span>Cómo obtener el enlace público en Canva:</span>
+                  </p>
+                  <p>1. En Canva, haz clic en el botón <strong>Compartir</strong> (arriba a la derecha).</p>
+                  <p>2. En "Enlace de colaboración", selecciona <strong>"Enlace público de sólo visualización"</strong> o copia el link de visualización.</p>
+                  <p>3. Pégalo aquí. El sistema lo convertirá automáticamente en un visor interactivo a pantalla completa para tus visitantes.</p>
                 </div>
               </div>
             ) : (
@@ -373,8 +450,9 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
                   className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-sm focus:border-[var(--accent-color)] focus:outline-none transition-colors cursor-pointer"
                 >
                   <option value="pdf">Documento PDF</option>
-                  <option value="pptx">Presentación PowerPoint (PPTX)</option>
+                  <option value="canva">Canva Presentation / Diseño</option>
                   <option value="google_slides">Google Slides</option>
+                  <option value="pptx">Presentación PowerPoint (PPTX)</option>
                   <option value="google_drive">Archivo Google Drive</option>
                 </select>
               </div>
@@ -391,12 +469,11 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-sm focus:border-[var(--accent-color)] focus:outline-none transition-colors cursor-pointer"
                 >
-                  <option value="Dossier">Dossier de Obras</option>
-                  <option value="Presentación">Presentación / Pitch Deck</option>
-                  <option value="Manual de Marca">Manual de Marca</option>
-                  <option value="CV">Curriculum / CV</option>
-                  <option value="Propuesta">Propuesta Comercial</option>
-                  <option value="Editorial">Catálogo Editorial</option>
+                  <option value="Diapositivas">Diapositivas Corporativas</option>
+                  <option value="Pitch Deck">Pitch Deck / Inversión</option>
+                  <option value="Presentación">Presentación Comercial B2B</option>
+                  <option value="Reporte Ejecutivo">Reporte Ejecutivo en Slides</option>
+                  <option value="Keynote">Keynote / Conferencia</option>
                 </select>
               </div>
 

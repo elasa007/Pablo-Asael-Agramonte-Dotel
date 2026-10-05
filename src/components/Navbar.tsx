@@ -12,6 +12,7 @@ import {
   FolderKanban,
   Film,
   FileText,
+  Presentation,
   Sparkles,
   Lock,
   Unlock,
@@ -20,19 +21,22 @@ import {
   Code2
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { SectionVisibility } from '../types/portfolio';
 
 export interface NavbarProps {
   currentView?: 'portfolio' | 'admin';
   setCurrentView?: (view: 'portfolio' | 'admin') => void;
   isAdminAuthenticated?: boolean;
   onOpenArchitectureDocs?: () => void;
+  sectionVisibility?: SectionVisibility;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentView = 'portfolio',
   setCurrentView,
   isAdminAuthenticated = false,
-  onOpenArchitectureDocs
+  onOpenArchitectureDocs,
+  sectionVisibility
 }) => {
   const { theme, toggleTheme } = useTheme();
   
@@ -148,20 +152,31 @@ export const Navbar: React.FC<NavbarProps> = ({
     setIsMobileMenuOpen(false);
   };
 
-  // 1. "Sobre Mí" Submenu Items
+  // 1. "Sobre Mí" Submenu Items with visibility key
   const aboutSublinks = [
-    { label: 'Perfil & Skills', href: '#skills', sectionId: 'skills', icon: User },
-    { label: 'Trayectoria', href: '#trayectoria', sectionId: 'trayectoria', icon: Briefcase },
-    { label: 'Formación', href: '#formacion', sectionId: 'formacion', icon: GraduationCap },
-    { label: 'Referencias', href: '#referencias', sectionId: 'referencias', icon: UserCheck }
+    { label: 'Perfil & Skills', href: '#skills', sectionId: 'skills', icon: User, key: 'skills' },
+    { label: 'Trayectoria', href: '#trayectoria', sectionId: 'trayectoria', icon: Briefcase, key: 'experience' },
+    { label: 'Formación', href: '#formacion', sectionId: 'formacion', icon: GraduationCap, key: 'education' },
+    { label: 'Referencias', href: '#referencias', sectionId: 'referencias', icon: UserCheck, key: 'references' }
   ];
 
-  // 2. "Portafolio" Submenu Items
+  // 2. "Portafolio" Submenu Items with visibility key
   const portfolioSublinks = [
-    { label: 'Galería Visual', href: '#galeria', sectionId: 'galeria', icon: FolderKanban },
-    { label: 'Videos & Reels', href: '#videos', sectionId: 'videos', icon: Film },
-    { label: 'Documentos & Slides', href: '#documentos', sectionId: 'documentos', icon: FileText }
+    { label: 'Galería Dinámica', href: '#galeria', sectionId: 'galeria', icon: FolderKanban, key: 'gallery' },
+    { label: 'Videos & Reels', href: '#videos', sectionId: 'videos', icon: Film, key: 'videos' },
+    { label: 'Diapositivas Corporativas', href: '#documentos', sectionId: 'documentos', icon: Presentation, key: 'documents' }
   ];
+
+  const visibleAboutSublinks = aboutSublinks.filter(
+    (item) => !sectionVisibility || sectionVisibility[item.key as keyof SectionVisibility] !== false
+  );
+
+  const visiblePortfolioSublinks = portfolioSublinks.filter(
+    (item) => !sectionVisibility || sectionVisibility[item.key as keyof SectionVisibility] !== false
+  );
+
+  const showSpecialties = !sectionVisibility || sectionVisibility.specialties !== false;
+  const showContact = !sectionVisibility || sectionVisibility.contact !== false;
 
   return (
     <>
@@ -191,144 +206,150 @@ export const Navbar: React.FC<NavbarProps> = ({
             </span>
           </a>
 
-          {/* Enlaces Centrales (Desktop: 4 Elementos Principales) */}
+          {/* Enlaces Centrales (Desktop: Elementos condicionados por visibilidad) */}
           <div className="hidden md:flex items-center gap-8 lg:gap-10">
             
-            {/* 1. Sobre Mí (Dropdown en Hover) */}
-            <div 
-              className="relative"
-              onMouseEnter={() => handleMouseEnter('about')}
-              onMouseLeave={handleMouseLeave}
-            >
-              <button
-                type="button"
-                onClick={() => handleScrollTo('skills')}
-                className={`flex items-center gap-1.5 text-sm font-medium py-2 transition-colors cursor-pointer focus:outline-none ${
-                  activeDropdown === 'about' ? 'text-white' : 'text-gray-300 hover:text-white'
-                }`}
-                aria-expanded={activeDropdown === 'about'}
-                aria-haspopup="true"
+            {/* 1. Sobre Mí (Dropdown en Hover - solo visible si al menos 1 subsección está activa) */}
+            {visibleAboutSublinks.length > 0 && (
+              <div 
+                className="relative"
+                onMouseEnter={() => handleMouseEnter('about')}
+                onMouseLeave={handleMouseLeave}
               >
-                <span>Sobre Mí</span>
-                <ChevronDown 
-                  className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-                    activeDropdown === 'about' ? 'rotate-180 text-white' : ''
-                  }`} 
-                />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleScrollTo(visibleAboutSublinks[0]?.sectionId || 'skills')}
+                  className={`flex items-center gap-1.5 text-sm font-medium py-2 transition-colors cursor-pointer focus:outline-none ${
+                    activeDropdown === 'about' ? 'text-white' : 'text-gray-300 hover:text-white'
+                  }`}
+                  aria-expanded={activeDropdown === 'about'}
+                  aria-haspopup="true"
+                >
+                  <span>Sobre Mí</span>
+                  <ChevronDown 
+                    className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                      activeDropdown === 'about' ? 'rotate-180 text-white' : ''
+                    }`} 
+                  />
+                </button>
 
-              {/* Invisible Hover Bridge Pad */}
-              <div className="absolute top-full left-0 right-0 h-2 -mt-1 pointer-events-auto" />
+                {/* Invisible Hover Bridge Pad */}
+                <div className="absolute top-full left-0 right-0 h-2 -mt-1 pointer-events-auto" />
 
-              {/* Dropdown Menu con AnimatePresence de Framer Motion */}
-              <AnimatePresence>
-                {activeDropdown === 'about' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="absolute top-[calc(100%+4px)] left-0 min-w-[210px] bg-[#141414]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden"
-                  >
-                    <div className="space-y-1">
-                      {aboutSublinks.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <a
-                            key={item.href}
-                            href={item.href}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleScrollTo(item.sectionId);
-                            }}
-                            className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors group cursor-pointer"
-                          >
-                            <span className="p-1 rounded-lg bg-white/5 text-gray-400 group-hover:text-[#E53935] group-hover:bg-[#E53935]/10 transition-colors">
-                              <Icon className="w-3.5 h-3.5" />
-                            </span>
-                            <span>{item.label}</span>
-                          </a>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                {/* Dropdown Menu con AnimatePresence de Framer Motion */}
+                <AnimatePresence>
+                  {activeDropdown === 'about' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                      className="absolute top-[calc(100%+4px)] left-0 min-w-[210px] bg-[#141414]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden"
+                    >
+                      <div className="space-y-1">
+                        {visibleAboutSublinks.map((item) => {
+                          const Icon = item.icon;
+                          return (
+                            <a
+                              key={item.href}
+                              href={item.href}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleScrollTo(item.sectionId);
+                              }}
+                              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors group cursor-pointer"
+                            >
+                              <span className="p-1 rounded-lg bg-white/5 text-gray-400 group-hover:text-[#E53935] group-hover:bg-[#E53935]/10 transition-colors">
+                                <Icon className="w-3.5 h-3.5" />
+                              </span>
+                              <span>{item.label}</span>
+                            </a>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
 
-            {/* 2. Especialidades (Enlace Directo) */}
-            <a
-              href="#especialidades"
-              onClick={(e) => {
-                e.preventDefault();
-                handleScrollTo('especialidades');
-              }}
-              className="text-sm font-medium text-gray-300 hover:text-white transition-colors cursor-pointer py-2"
-            >
-              Especialidades
-            </a>
-
-            {/* 3. Portafolio (Dropdown en Hover) */}
-            <div 
-              className="relative"
-              onMouseEnter={() => handleMouseEnter('portfolio')}
-              onMouseLeave={handleMouseLeave}
-            >
-              <button
-                type="button"
-                onClick={() => handleScrollTo('galeria')}
-                className={`flex items-center gap-1.5 text-sm font-medium py-2 transition-colors cursor-pointer focus:outline-none ${
-                  activeDropdown === 'portfolio' ? 'text-white' : 'text-gray-300 hover:text-white'
-                }`}
-                aria-expanded={activeDropdown === 'portfolio'}
-                aria-haspopup="true"
+            {/* 2. Especialidades (Enlace Directo - condicionado por visibilidad) */}
+            {showSpecialties && (
+              <a
+                href="#especialidades"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleScrollTo('especialidades');
+                }}
+                className="text-sm font-medium text-gray-300 hover:text-white transition-colors cursor-pointer py-2"
               >
-                <span>Portafolio</span>
-                <ChevronDown 
-                  className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-                    activeDropdown === 'portfolio' ? 'rotate-180 text-white' : ''
-                  }`} 
-                />
-              </button>
+                Especialidades
+              </a>
+            )}
 
-              {/* Invisible Hover Bridge Pad */}
-              <div className="absolute top-full left-0 right-0 h-2 -mt-1 pointer-events-auto" />
+            {/* 3. Portafolio (Dropdown en Hover - solo visible si al menos 1 subsección está activa) */}
+            {visiblePortfolioSublinks.length > 0 && (
+              <div 
+                className="relative"
+                onMouseEnter={() => handleMouseEnter('portfolio')}
+                onMouseLeave={handleMouseLeave}
+              >
+                <button
+                  type="button"
+                  onClick={() => handleScrollTo(visiblePortfolioSublinks[0]?.sectionId || 'galeria')}
+                  className={`flex items-center gap-1.5 text-sm font-medium py-2 transition-colors cursor-pointer focus:outline-none ${
+                    activeDropdown === 'portfolio' ? 'text-white' : 'text-gray-300 hover:text-white'
+                  }`}
+                  aria-expanded={activeDropdown === 'portfolio'}
+                  aria-haspopup="true"
+                >
+                  <span>Portafolio</span>
+                  <ChevronDown 
+                    className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                      activeDropdown === 'portfolio' ? 'rotate-180 text-white' : ''
+                    }`} 
+                  />
+                </button>
 
-              {/* Dropdown Menu con AnimatePresence de Framer Motion */}
-              <AnimatePresence>
-                {activeDropdown === 'portfolio' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="absolute top-[calc(100%+4px)] left-0 min-w-[220px] bg-[#141414]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden"
-                  >
-                    <div className="space-y-1">
-                      {portfolioSublinks.map((item) => {
-                        const Icon = item.icon;
-                        return (
-                          <a
-                            key={item.href}
-                            href={item.href}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleScrollTo(item.sectionId);
-                            }}
-                            className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors group cursor-pointer"
-                          >
-                            <span className="p-1 rounded-lg bg-white/5 text-gray-400 group-hover:text-[#E53935] group-hover:bg-[#E53935]/10 transition-colors">
-                              <Icon className="w-3.5 h-3.5" />
-                            </span>
-                            <span>{item.label}</span>
-                          </a>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                {/* Invisible Hover Bridge Pad */}
+                <div className="absolute top-full left-0 right-0 h-2 -mt-1 pointer-events-auto" />
+
+                {/* Dropdown Menu con AnimatePresence de Framer Motion */}
+                <AnimatePresence>
+                  {activeDropdown === 'portfolio' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2, ease: 'easeOut' }}
+                      className="absolute top-[calc(100%+4px)] left-0 min-w-[220px] bg-[#141414]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-2 z-50 overflow-hidden"
+                    >
+                      <div className="space-y-1">
+                        {visiblePortfolioSublinks.map((item) => {
+                          const Icon = item.icon;
+                          return (
+                            <a
+                              key={item.href}
+                              href={item.href}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleScrollTo(item.sectionId);
+                              }}
+                              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition-colors group cursor-pointer"
+                            >
+                              <span className="p-1 rounded-lg bg-white/5 text-gray-400 group-hover:text-[#E53935] group-hover:bg-[#E53935]/10 transition-colors">
+                                <Icon className="w-3.5 h-3.5" />
+                              </span>
+                              <span>{item.label}</span>
+                            </a>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
 
           </div>
 
@@ -386,18 +407,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               )
             )}
 
-            {/* Botón Sólido de Contacto (CTA Exacto: #E53935 con texto blanco y hover suave) */}
-            <a
-              href="#contacto"
-              onClick={(e) => {
-                e.preventDefault();
-                handleScrollTo('contacto');
-              }}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#E53935] hover:bg-[#d32f2f] text-white font-medium text-sm rounded-xl transition-all duration-200 shadow-md shadow-[#E53935]/20 hover:shadow-lg hover:shadow-[#E53935]/30 active:scale-95 cursor-pointer"
-            >
-              <span>Contacto</span>
-              <ArrowUpRight className="w-4 h-4" />
-            </a>
+            {/* Botón Sólido de Contacto (CTA Exacto - oculto si la sección contacto está oculta) */}
+            {showContact && (
+              <a
+                href="#contacto"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleScrollTo('contacto');
+                }}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#E53935] hover:bg-[#d32f2f] text-white font-medium text-sm rounded-xl transition-all duration-200 shadow-md shadow-[#E53935]/20 hover:shadow-lg hover:shadow-[#E53935]/30 active:scale-95 cursor-pointer"
+              >
+                <span>Contacto</span>
+                <ArrowUpRight className="w-4 h-4" />
+              </a>
+            )}
 
           </div>
 
@@ -483,109 +506,115 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* Cuerpo del Menú Móvil: Enlaces y Subenlaces Indentados */}
               <div className="p-6 space-y-6 flex-1 overflow-y-auto">
                 
-                {/* 1. Sección "Sobre Mí" con Subenlaces Indentados */}
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsMobileAboutOpen(!isMobileAboutOpen)}
-                    className="w-full flex items-center justify-between text-left text-xs font-mono uppercase tracking-wider text-gray-400 font-semibold px-1 py-1 hover:text-white transition-colors cursor-pointer"
-                  >
-                    <span>Sobre Mí</span>
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isMobileAboutOpen ? 'rotate-180' : ''}`} />
-                  </button>
+                {/* 1. Sección "Sobre Mí" (solo visible si al menos 1 subsección está activa) */}
+                {visibleAboutSublinks.length > 0 && (
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsMobileAboutOpen(!isMobileAboutOpen)}
+                      className="w-full flex items-center justify-between text-left text-xs font-mono uppercase tracking-wider text-gray-400 font-semibold px-1 py-1 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <span>Sobre Mí</span>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isMobileAboutOpen ? 'rotate-180' : ''}`} />
+                    </button>
 
-                  <AnimatePresence>
-                    {isMobileAboutOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="border-l-2 border-[#E53935]/40 ml-2 pl-4 space-y-1.5 pt-1"
-                      >
-                        {aboutSublinks.map((item) => {
-                          const Icon = item.icon;
-                          return (
-                            <a
-                              key={item.href}
-                              href={item.href}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleScrollTo(item.sectionId);
-                              }}
-                              className="flex items-center gap-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors group cursor-pointer"
-                            >
-                              <span className="p-1 rounded-md bg-white/5 text-gray-400 group-hover:text-[#E53935] group-hover:bg-[#E53935]/15 transition-colors">
-                                <Icon className="w-3.5 h-3.5" />
-                              </span>
-                              <span>{item.label}</span>
-                            </a>
-                          );
-                        })}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                    <AnimatePresence>
+                      {isMobileAboutOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="border-l-2 border-[#E53935]/40 ml-2 pl-4 space-y-1.5 pt-1"
+                        >
+                          {visibleAboutSublinks.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                              <a
+                                key={item.href}
+                                href={item.href}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleScrollTo(item.sectionId);
+                                }}
+                                className="flex items-center gap-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors group cursor-pointer"
+                              >
+                                <span className="p-1 rounded-md bg-white/5 text-gray-400 group-hover:text-[#E53935] group-hover:bg-[#E53935]/15 transition-colors">
+                                  <Icon className="w-3.5 h-3.5" />
+                                </span>
+                                <span>{item.label}</span>
+                              </a>
+                            );
+                          })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
 
-                {/* 2. Sección "Especialidades" (Enlace Directo) */}
-                <div className="pt-2">
-                  <a
-                    href="#especialidades"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleScrollTo('especialidades');
-                    }}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/5 border border-white/5 hover:border-white/15 text-sm font-medium text-gray-200 hover:text-white transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Sparkles className="w-4 h-4 text-[#E53935]" />
-                      <span>Especialidades</span>
-                    </div>
-                    <ArrowUpRight className="w-4 h-4 text-gray-500" />
-                  </a>
-                </div>
+                {/* 2. Sección "Especialidades" (Enlace Directo - condicionado por visibilidad) */}
+                {showSpecialties && (
+                  <div className="pt-2">
+                    <a
+                      href="#especialidades"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleScrollTo('especialidades');
+                      }}
+                      className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/5 border border-white/5 hover:border-white/15 text-sm font-medium text-gray-200 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Sparkles className="w-4 h-4 text-[#E53935]" />
+                        <span>Especialidades</span>
+                      </div>
+                      <ArrowUpRight className="w-4 h-4 text-gray-500" />
+                    </a>
+                  </div>
+                )}
 
-                {/* 3. Sección "Portafolio" con Subenlaces Indentados */}
-                <div className="space-y-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsMobilePortfolioOpen(!isMobilePortfolioOpen)}
-                    className="w-full flex items-center justify-between text-left text-xs font-mono uppercase tracking-wider text-gray-400 font-semibold px-1 py-1 hover:text-white transition-colors cursor-pointer"
-                  >
-                    <span>Portafolio</span>
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isMobilePortfolioOpen ? 'rotate-180' : ''}`} />
-                  </button>
+                {/* 3. Sección "Portafolio" (solo visible si al menos 1 subsección está activa) */}
+                {visiblePortfolioSublinks.length > 0 && (
+                  <div className="space-y-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsMobilePortfolioOpen(!isMobilePortfolioOpen)}
+                      className="w-full flex items-center justify-between text-left text-xs font-mono uppercase tracking-wider text-gray-400 font-semibold px-1 py-1 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <span>Portafolio</span>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isMobilePortfolioOpen ? 'rotate-180' : ''}`} />
+                    </button>
 
-                  <AnimatePresence>
-                    {isMobilePortfolioOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="border-l-2 border-[#E53935]/40 ml-2 pl-4 space-y-1.5 pt-1"
-                      >
-                        {portfolioSublinks.map((item) => {
-                          const Icon = item.icon;
-                          return (
-                            <a
-                              key={item.href}
-                              href={item.href}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleScrollTo(item.sectionId);
-                              }}
-                              className="flex items-center gap-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors group cursor-pointer"
-                            >
-                              <span className="p-1 rounded-md bg-white/5 text-gray-400 group-hover:text-[#E53935] group-hover:bg-[#E53935]/15 transition-colors">
-                                <Icon className="w-3.5 h-3.5" />
-                              </span>
-                              <span>{item.label}</span>
-                            </a>
-                          );
-                        })}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                    <AnimatePresence>
+                      {isMobilePortfolioOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="border-l-2 border-[#E53935]/40 ml-2 pl-4 space-y-1.5 pt-1"
+                        >
+                          {visiblePortfolioSublinks.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                              <a
+                                key={item.href}
+                                href={item.href}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handleScrollTo(item.sectionId);
+                                }}
+                                className="flex items-center gap-3 py-2 text-sm font-medium text-gray-300 hover:text-white transition-colors group cursor-pointer"
+                              >
+                                <span className="p-1 rounded-md bg-white/5 text-gray-400 group-hover:text-[#E53935] group-hover:bg-[#E53935]/15 transition-colors">
+                                  <Icon className="w-3.5 h-3.5" />
+                                </span>
+                                <span>{item.label}</span>
+                              </a>
+                            );
+                          })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )}
 
                 {/* Control Administrativo (Mobile) */}
                 {setCurrentView && (
@@ -675,18 +704,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* Pie del Menú Móvil: Botón de Contacto CTA */}
               <div className="p-6 border-t border-white/10 bg-[#141414]/90 space-y-4">
                 
-                {/* Botón Sólido de Contacto Móvil */}
-                <a
-                  href="#contacto"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleScrollTo('contacto');
-                  }}
-                  className="w-full py-3.5 px-4 rounded-xl bg-[#E53935] hover:bg-[#d32f2f] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-[#E53935]/25 active:scale-95 transition-all cursor-pointer"
-                >
-                  <span>Contacto Directo</span>
-                  <ArrowUpRight className="w-4 h-4" />
-                </a>
+                {/* Botón Sólido de Contacto Móvil (oculto si la sección contacto está oculta) */}
+                {showContact && (
+                  <a
+                    href="#contacto"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleScrollTo('contacto');
+                    }}
+                    className="w-full py-3.5 px-4 rounded-xl bg-[#E53935] hover:bg-[#d32f2f] text-white text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-[#E53935]/25 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <span>Contacto Directo</span>
+                    <ArrowUpRight className="w-4 h-4" />
+                  </a>
+                )}
 
                 <div className="text-center">
                   <p className="text-[11px] font-mono text-gray-500">

@@ -28,6 +28,7 @@ export const SpecialtiesGrid: React.FC<SpecialtiesGridProps> = ({
   onEditSection,
   onDeleteSection
 }) => {
+  const [confirmHideSection, setConfirmHideSection] = React.useState(false);
   return (
     <section id="especialidades" className="py-24 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)] relative transition-colors duration-300">
       {/* Background ambient lighting */}
@@ -66,13 +67,9 @@ export const SpecialtiesGrid: React.FC<SpecialtiesGridProps> = ({
               {onDeleteSection && (
                 <button
                   type="button"
-                  onClick={() => {
-                    if (confirm('¿Deseas ocultar/borrar la sección de Especialidades de la vista pública? Podrás restaurarla en el Gestor de Secciones.')) {
-                      onDeleteSection();
-                    }
-                  }}
+                  onClick={onDeleteSection}
                   className="px-3 py-1.5 bg-red-950/20 hover:bg-red-600 text-red-400 hover:text-white text-xs font-mono rounded-lg border border-red-500/30 transition-colors cursor-pointer flex items-center gap-1.5"
-                  title="Ocultar sección Especialidades"
+                  title="Ocultar sección Especialidades de la vista pública"
                 >
                   <span>Ocultar Sección</span>
                 </button>
