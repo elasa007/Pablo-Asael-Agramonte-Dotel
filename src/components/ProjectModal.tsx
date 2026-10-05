@@ -14,12 +14,20 @@ import {
   Image as ImageIcon,
   Download,
   Maximize2,
+  Minimize2,
   ChevronLeft,
   ChevronRight,
-  Layers
+  Layers,
+  Share2,
+  Check,
+  Info,
+  Film,
+  Palette
 } from 'lucide-react';
 import { Project } from '../types/portfolio';
-import { parseVideoUrl, parseDocumentUrl } from '../utils/mediaEmbed';
+import { parseVideoUrl, parseDocumentUrl, getCanvaDirectViewUrl } from '../utils/mediaEmbed';
+import { OptimizedImage } from './OptimizedImage';
+import { imageOptimizationService } from '../services/imageOptimizationService';
 
 interface ProjectModalProps {
   project: Project | null;
@@ -41,6 +49,9 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
         : 'image';
 
   const [activeMediaTab, setActiveMediaTab] = useState<'image' | 'video' | 'document'>(defaultTab);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Carousel images array
   const carouselImages = (project.images && project.images.length > 0)
@@ -49,28 +60,79 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Reset index when project changes
+  // Reset index & tabs when project changes
   useEffect(() => {
     setCurrentImageIndex(0);
+    setActiveMediaTab(defaultTab);
+    setIsFullscreen(false);
+    setShowFullDescription(false);
   }, [project?.id]);
 
-  // Keyboard navigation for carousel
+  // Preload adjacent carousel images for instant smooth transitions
+  useEffect(() => {
+    if (carouselImages.length > 1) {
+      const nextIdx = (currentImageIndex + 1) % carouselImages.length;
+      const prevIdx = (currentImageIndex - 1 + carouselImages.length) % carouselImages.length;
+      imageOptimizationService.preload(carouselImages[nextIdx]);
+      imageOptimizationService.preload(carouselImages[prevIdx]);
+    }
+  }, [currentImageIndex, carouselImages]);
+
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (activeMediaTab !== 'image' || carouselImages.length <= 1) return;
-      if (e.key === 'ArrowLeft') {
-        setCurrentImageIndex(prev => (prev > 0 ? prev - 1 : carouselImages.length - 1));
-      } else if (e.key === 'ArrowRight') {
-        setCurrentImageIndex(prev => (prev < carouselImages.length - 1 ? prev + 1 : 0));
+      if (e.key === 'Escape') {
+        if (showFullDescription) {
+          setShowFullDescription(false);
+        } else if (isFullscreen) {
+          setIsFullscreen(false);
+        } else {
+          onClose();
+        }
+        return;
+      }
+
+      if (e.key === 'f' || e.key === 'F') {
+        if (!(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
+          setIsFullscreen(prev => !prev);
+        }
+      }
+
+      if (activeMediaTab === 'image' && carouselImages.length > 1) {
+        if (e.key === 'ArrowLeft') {
+          setCurrentImageIndex(prev => (prev > 0 ? prev - 1 : carouselImages.length - 1));
+        } else if (e.key === 'ArrowRight') {
+          setCurrentImageIndex(prev => (prev < carouselImages.length - 1 ? prev + 1 : 0));
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeMediaTab, carouselImages.length]);
+  }, [activeMediaTab, carouselImages.length, isFullscreen, showFullDescription, onClose]);
+
+  const handleCopyLink = () => {
+    const shareUrl = window.location.origin + window.location.pathname + '#galeria';
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const isCanva = docInfo?.type === 'canva' || 
+    project.documentType === 'canva' || 
+    Boolean(project.documentUrl && project.documentUrl.includes('canva.com'));
+
+  const canvaDirectUrl = isCanva 
+    ? (getCanvaDirectViewUrl(project.documentUrl || docInfo?.embedUrl || '') || project.documentUrl) 
+    : '';
+
+  const isSlideDeck = project.category === 'Diapositivas' || 
+    docInfo?.type === 'google_slides' || 
+    docInfo?.type === 'pptx' || 
+    isCanva;
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 lg:p-8 overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 lg:p-6 overflow-hidden">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -80,407 +142,475 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
           className="fixed inset-0 bg-black/90 backdrop-blur-md"
         />
 
-        {/* Modal Window */}
+        {/* Modal Window Container: Fixed height, NO SCROLL */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 20 }}
+          initial={{ opacity: 0, scale: 0.97, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96, y: 20 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-6xl bg-[var(--modal-bg)] border border-[var(--border-strong)] rounded-2xl overflow-hidden shadow-2xl z-10 my-4 sm:my-8 transition-colors duration-300 max-h-[92vh] flex flex-col"
+          exit={{ opacity: 0, scale: 0.97, y: 15 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className={`relative w-full bg-[var(--modal-bg)] border border-[var(--border-strong)] rounded-2xl overflow-hidden shadow-2xl z-10 my-auto flex flex-col transition-all duration-300 ${
+            isFullscreen
+              ? 'fixed inset-2 z-50 max-w-none max-h-none h-[calc(100vh-1rem)]'
+              : 'w-[96vw] max-w-6xl 2xl:max-w-7xl h-[88vh] max-h-[88vh]'
+          }`}
         >
-          {/* Top Bar with Media Switcher and Close Button */}
-          <div className="flex flex-wrap items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] gap-3 shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-[var(--accent-color)] font-semibold">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{project.category}</span>
-                <span className="text-[var(--text-muted)]">/</span>
-                <span className="text-[var(--text-secondary)]">{project.year}</span>
-              </div>
+          {/* 1. COMPACT TOP BAR HEADER (Shrink-0, Zero Overcrowding) */}
+          <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 sm:py-3 border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] gap-3 shrink-0">
+            
+            {/* Left: Category Icon, Title & Meta */}
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="p-1.5 rounded-lg bg-[var(--accent-color)]/15 text-[var(--accent-color)] border border-[var(--accent-color)]/30 shrink-0">
+                {isSlideDeck ? (
+                  <Presentation className="w-4 h-4" />
+                ) : videoInfo ? (
+                  <Film className="w-4 h-4" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+              </span>
 
-              {/* Media Switcher Tabs if project has multiple formats */}
-              {(videoInfo || docInfo) && (
-                <div className="flex items-center gap-1 bg-[var(--bg-primary)] p-1 rounded-xl border border-[var(--border-subtle)] ml-2">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest text-[var(--accent-color)] font-semibold truncate">
+                  <span>{project.category}</span>
+                  <span className="text-[var(--text-muted)]">·</span>
+                  <span className="text-[var(--text-secondary)]">{project.year}</span>
+                  {project.client && (
+                    <>
+                      <span className="text-[var(--text-muted)] hidden md:inline">·</span>
+                      <span className="text-[var(--text-primary)] hidden md:inline truncate">{project.client}</span>
+                    </>
+                  )}
+                </div>
+                <h3 className="font-bebas text-lg sm:text-2xl text-[var(--text-primary)] tracking-wide line-clamp-1 leading-tight">
+                  {project.title}
+                </h3>
+              </div>
+            </div>
+
+            {/* Center: Media Tabs Switcher */}
+            {(videoInfo || docInfo) && (
+              <div className="flex items-center gap-1 bg-[var(--bg-primary)] p-0.5 sm:p-1 rounded-xl border border-[var(--border-subtle)] shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setActiveMediaTab('image')}
+                  className={`px-2.5 py-1 text-xs font-mono rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
+                    activeMediaTab === 'image'
+                      ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] font-semibold border border-[var(--border-strong)] shadow-sm'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                  }`}
+                  title="Ver arte visual"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>Arte</span>
+                </button>
+
+                {videoInfo && (
                   <button
                     type="button"
-                    onClick={() => setActiveMediaTab('image')}
+                    onClick={() => setActiveMediaTab('video')}
                     className={`px-2.5 py-1 text-xs font-mono rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
-                      activeMediaTab === 'image'
-                        ? 'bg-[var(--bg-elevated)] text-[var(--text-primary)] font-semibold border border-[var(--border-strong)]'
+                      activeMediaTab === 'video'
+                        ? 'bg-[var(--accent-color)] text-white font-semibold shadow-sm'
                         : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                     }`}
+                    title="Ver reproductor de video"
                   >
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    <span>Arte</span>
+                    <VideoIcon className="w-3.5 h-3.5" />
+                    <span>Video</span>
                   </button>
+                )}
 
-                  {videoInfo && (
-                    <button
-                      type="button"
-                      onClick={() => setActiveMediaTab('video')}
-                      className={`px-2.5 py-1 text-xs font-mono rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
-                        activeMediaTab === 'video'
-                          ? 'bg-[var(--accent-color)] text-white font-semibold shadow-sm'
-                          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                      }`}
-                    >
-                      <VideoIcon className="w-3.5 h-3.5" />
-                      <span>Video ({videoInfo.type === 'youtube' ? 'YouTube' : videoInfo.type === 'vimeo' ? 'Vimeo' : 'Drive'})</span>
-                    </button>
-                  )}
-
-                  {docInfo && (
-                    <button
-                      type="button"
-                      onClick={() => setActiveMediaTab('document')}
-                      className={`px-2.5 py-1 text-xs font-mono rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
-                        activeMediaTab === 'document'
-                          ? 'bg-[var(--accent-color)] text-white font-semibold shadow-sm'
-                          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                      }`}
-                    >
-                      {docInfo.type === 'google_slides' || docInfo.type === 'pptx' ? (
-                        <Presentation className="w-3.5 h-3.5" />
-                      ) : (
-                        <FileText className="w-3.5 h-3.5" />
-                      )}
-                      <span>
-                        {docInfo.type === 'google_slides' ? 'Google Slides' : docInfo.type === 'pptx' ? 'PPTX' : 'PDF'}
-                      </span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <button
-              onClick={onClose}
-              className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-lg transition-colors cursor-pointer"
-              aria-label="Cerrar modal"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Modal Body */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-y-auto">
-            
-            {/* Visual media preview container (7 cols) */}
-            <div className="lg:col-span-7 bg-black flex flex-col items-center justify-center p-4 sm:p-6 border-b lg:border-b-0 lg:border-r border-[var(--border-subtle)] min-h-[380px] lg:min-h-[520px]">
-              
-              {/* VIEW 1: Video Player (YouTube, Vimeo, Google Drive, Direct) */}
-              {activeMediaTab === 'video' && videoInfo ? (
-                <div className="w-full h-full flex flex-col justify-center space-y-3">
-                  <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-neutral-950 border border-[var(--border-strong)] shadow-2xl">
-                    {videoInfo.type === 'direct_video' ? (
-                      <video
-                        src={videoInfo.embedUrl}
-                        controls
-                        autoPlay
-                        className="w-full h-full object-contain"
-                      />
+                {docInfo && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveMediaTab('document')}
+                    className={`px-2.5 py-1 text-xs font-mono rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
+                      activeMediaTab === 'document'
+                        ? isCanva ? 'bg-[#00C4CC] text-black font-semibold shadow-sm' : 'bg-amber-600 text-white font-semibold shadow-sm'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                    }`}
+                    title="Ver presentación / diapositivas"
+                  >
+                    {isCanva ? (
+                      <Palette className="w-3.5 h-3.5" />
                     ) : (
-                      <iframe
-                        src={videoInfo.embedUrl}
-                        title={project.title}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                        className="w-full h-full border-0"
-                      />
+                      <Presentation className="w-3.5 h-3.5" />
                     )}
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-[var(--text-muted)] font-mono px-1">
-                    <span className="flex items-center gap-1.5 text-[var(--accent-color)]">
-                      <Play className="w-3.5 h-3.5" />
-                      <span>Reproduciendo en {videoInfo.title}</span>
-                    </span>
-                    <a
-                      href={videoInfo.originalUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-[var(--text-primary)] flex items-center gap-1 underline transition-colors"
-                    >
-                      <span>Abrir en plataforma original</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                </div>
-              ) : activeMediaTab === 'document' && docInfo ? (
-                /* VIEW 2: Document & Slides Viewer (PDF, Google Slides, PPTX, Google Drive) */
-                <div className="w-full h-full flex flex-col justify-center space-y-3">
-                  <div className="relative w-full h-[460px] sm:h-[520px] rounded-xl overflow-hidden bg-neutral-900 border border-[var(--border-strong)] shadow-2xl">
-                    {docInfo.type === 'pdf' ? (
-                      docInfo.embedUrl.startsWith('data:application/pdf') ? (
-                        <object
-                          data={docInfo.embedUrl}
-                          type="application/pdf"
-                          className="w-full h-full"
-                        >
-                          <iframe
-                            src={docInfo.embedUrl}
-                            title="Visor PDF"
-                            className="w-full h-full border-0"
-                          />
-                        </object>
-                      ) : (
-                        <iframe
-                          src={`https://docs.google.com/viewer?url=${encodeURIComponent(docInfo.embedUrl)}&embedded=true`}
-                          title="Visor PDF"
-                          className="w-full h-full border-0"
-                        />
-                      )
-                    ) : docInfo.type === 'google_slides' || docInfo.type === 'drive' ? (
-                      <iframe
-                        src={docInfo.embedUrl}
-                        title="Presentación Google Slides"
-                        allowFullScreen
-                        className="w-full h-full border-0"
-                      />
-                    ) : docInfo.type === 'pptx' ? (
-                      <iframe
-                        src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(docInfo.embedUrl)}`}
-                        title="Presentación PPTX"
-                        allowFullScreen
-                        className="w-full h-full border-0"
-                      />
-                    ) : (
-                      <iframe
-                        src={docInfo.embedUrl}
-                        title="Visor de Documento"
-                        className="w-full h-full border-0"
-                      />
-                    )}
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-[var(--text-muted)] font-mono px-1">
-                    <span className="flex items-center gap-1.5 text-emerald-400">
-                      <FileText className="w-3.5 h-3.5" />
-                      <span>{project.documentName || docInfo.title}</span>
-                    </span>
-                    <a
-                      href={docInfo.originalUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-[var(--text-primary)] flex items-center gap-1 underline transition-colors"
-                    >
-                      <Download className="w-3 h-3" />
-                      <span>Descargar / Abrir Archivo</span>
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                /* VIEW 3: Main Artwork / Interactive Carousel */
-                <div className="relative w-full max-w-xl flex flex-col items-center">
-                  <div className="relative w-full rounded-2xl overflow-hidden shadow-2xl border border-[var(--border-subtle)] bg-neutral-950 flex items-center justify-center group min-h-[320px] sm:min-h-[420px]">
-                    {/* Active image display with smooth transition */}
-                    <AnimatePresence mode="wait">
-                      <motion.img
-                        key={currentImageIndex}
-                        src={carouselImages[currentImageIndex] || project.imageUrl}
-                        alt={`${project.title} - Imagen ${currentImageIndex + 1}`}
-                        referrerPolicy="no-referrer"
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 1.02 }}
-                        transition={{ duration: 0.25, ease: 'easeOut' }}
-                        className="w-full h-auto object-contain max-h-[500px] select-none"
-                      />
-                    </AnimatePresence>
-
-                    {/* Carousel Navigation Arrows if multiple images */}
-                    {carouselImages.length > 1 && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => setCurrentImageIndex(prev => (prev > 0 ? prev - 1 : carouselImages.length - 1))}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/60 hover:bg-[var(--accent-color)] text-white backdrop-blur-md border border-white/10 transition-all cursor-pointer shadow-lg opacity-85 hover:opacity-100 hover:scale-110 z-20"
-                          aria-label="Imagen anterior"
-                        >
-                          <ChevronLeft className="w-5 h-5" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setCurrentImageIndex(prev => (prev < carouselImages.length - 1 ? prev + 1 : 0))}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/60 hover:bg-[var(--accent-color)] text-white backdrop-blur-md border border-white/10 transition-all cursor-pointer shadow-lg opacity-85 hover:opacity-100 hover:scale-110 z-20"
-                          aria-label="Siguiente imagen"
-                        >
-                          <ChevronRight className="w-5 h-5" />
-                        </button>
-
-                        {/* Slide Counter Badge */}
-                        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-md text-white text-xs font-mono font-bold border border-white/10 shadow flex items-center gap-1.5 z-20">
-                          <Layers className="w-3.5 h-3.5 text-[var(--accent-color)]" />
-                          <span>{currentImageIndex + 1} / {carouselImages.length}</span>
-                        </div>
-                      </>
-                    )}
-
-                    {/* If video exists, show interactive banner overlay */}
-                    {videoInfo && (
-                      <div 
-                        onClick={() => setActiveMediaTab('video')}
-                        className="absolute inset-0 bg-black/45 hover:bg-black/30 transition-colors flex items-center justify-center cursor-pointer group z-10"
-                      >
-                        <div className="flex items-center gap-3 px-5 py-3 rounded-full bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white shadow-2xl transition-transform group-hover:scale-105 cursor-pointer">
-                          <Play className="w-5 h-5 fill-white" />
-                          <span className="text-xs font-semibold uppercase tracking-wider">
-                            Ver Video en {videoInfo.type === 'youtube' ? 'YouTube' : videoInfo.type === 'vimeo' ? 'Vimeo' : 'Reproductor'}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* If document exists without video */}
-                    {!videoInfo && docInfo && (
-                      <div 
-                        onClick={() => setActiveMediaTab('document')}
-                        className="absolute bottom-4 left-4 right-4 p-3 bg-black/80 backdrop-blur-md rounded-xl border border-white/20 flex items-center justify-between text-white cursor-pointer hover:bg-black/90 transition-colors z-10"
-                      >
-                        <div className="flex items-center gap-2 text-xs">
-                          <FileText className="w-4 h-4 text-[var(--accent-color)]" />
-                          <span className="font-semibold">{project.documentName || 'Documento disponible (PDF / Slides)'}</span>
-                        </div>
-                        <span className="text-xs text-[var(--accent-color)] underline">Abrir visor →</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Thumbnail Navigation Strip if multiple images */}
-                  {carouselImages.length > 1 && (
-                    <div className="w-full mt-3 flex items-center justify-center gap-2 overflow-x-auto py-1 px-1">
-                      {carouselImages.map((img, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setCurrentImageIndex(idx)}
-                          className={`relative w-14 h-11 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
-                            currentImageIndex === idx
-                              ? 'border-[var(--accent-color)] ring-2 ring-[var(--accent-color)]/30 scale-105 shadow-md'
-                              : 'border-white/10 opacity-50 hover:opacity-100'
-                          }`}
-                          aria-label={`Ver foto ${idx + 1}`}
-                        >
-                          <img src={img} alt={`Miniatura ${idx + 1}`} className="w-full h-full object-cover" />
-                          <span className="absolute bottom-0 right-0 bg-black/80 text-[8px] font-mono text-white px-1">
-                            {idx + 1}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Project Details & Editorial Info (5 cols) */}
-            <div className="lg:col-span-5 p-6 sm:p-8 flex flex-col justify-between space-y-6 bg-[var(--modal-bg)]">
-              <div className="space-y-6">
-                <div>
-                  <h3 className="font-bebas text-3xl sm:text-4xl text-[var(--text-primary)] tracking-wide leading-tight">
-                    {project.title}
-                  </h3>
-                  <div className="h-[2px] w-12 bg-[var(--accent-color)] mt-3" />
-                </div>
-
-                {/* Metadata credits table */}
-                <div className="space-y-3 py-3 border-y border-[var(--border-subtle)] text-xs">
-                  <div className="flex items-center justify-between text-[var(--text-secondary)]">
-                    <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5 text-[var(--accent-color)]" /> Cliente</span>
-                    <span className="text-[var(--text-primary)] font-medium">{project.client || 'Encargo de Estudio'}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[var(--text-secondary)]">
-                    <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-[var(--accent-color)]" /> Año</span>
-                    <span className="text-[var(--text-primary)] font-medium">{project.year}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-[var(--text-secondary)]">
-                    <span className="flex items-center gap-1.5"><Tag className="w-3.5 h-3.5 text-[var(--accent-color)]" /> Disciplina</span>
-                    <span className="text-[var(--accent-color)] font-semibold">{project.category}</span>
-                  </div>
-                  {videoInfo && (
-                    <div className="flex items-center justify-between text-[var(--text-secondary)]">
-                      <span className="flex items-center gap-1.5"><VideoIcon className="w-3.5 h-3.5 text-[var(--accent-color)]" /> Video Link</span>
-                      <button
-                        onClick={() => setActiveMediaTab('video')}
-                        className="text-[var(--accent-color)] hover:underline font-mono text-[11px] cursor-pointer"
-                      >
-                        {videoInfo.type.toUpperCase()} Player
-                      </button>
-                    </div>
-                  )}
-                  {docInfo && (
-                    <div className="flex items-center justify-between text-[var(--text-secondary)]">
-                      <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5 text-emerald-400" /> Documento</span>
-                      <button
-                        onClick={() => setActiveMediaTab('document')}
-                        className="text-emerald-400 hover:underline font-mono text-[11px] cursor-pointer"
-                      >
-                        {docInfo.type.toUpperCase()}
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Project Statement / Description */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-mono uppercase tracking-wider text-[var(--text-muted)]">
-                    Manifiesto & Ejecución
-                  </h4>
-                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                    {project.description}
-                  </p>
-                </div>
-
-                {/* Unboxed tags */}
-                {project.tags && project.tags.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-mono uppercase tracking-wider text-[var(--text-muted)]">
-                      Entregables & Formatos
-                    </h4>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-secondary)]">
-                      {project.tags.map((tag, i) => (
-                        <React.Fragment key={i}>
-                          <span className="text-[var(--text-primary)]">{tag}</span>
-                          {i < project.tags.length - 1 && <span className="text-[var(--text-muted)]">·</span>}
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  </div>
+                    <span>{isCanva ? 'Canva' : 'Diapositivas'}</span>
+                  </button>
                 )}
               </div>
+            )}
 
-              {/* Action buttons */}
-              <div className="pt-4 flex flex-col sm:flex-row items-center gap-3">
+            {/* Right: Actions (Share, Fullscreen, Close) */}
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+              {/* Share link button */}
+              <div className="relative">
+                {copied && (
+                  <span className="absolute -top-7 right-0 px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-mono whitespace-nowrap shadow-lg animate-fade-in z-30">
+                    ¡Copiado!
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className={`p-2 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 ${
+                    copied
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]'
+                  }`}
+                  title="Copiar enlace"
+                >
+                  {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+                </button>
+              </div>
+
+              {/* Fullscreen Toggle */}
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-lg transition-colors cursor-pointer"
+                title={isFullscreen ? 'Salir de pantalla completa (F)' : 'Pantalla completa (F)'}
+                aria-label="Pantalla completa"
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
+
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-lg transition-colors cursor-pointer"
+                aria-label="Cerrar modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* 2. MAIN MEDIA CANVAS (Flex-1, Expansive, Takes Up Majority of Screen, No Scroll) */}
+          <div className="flex-1 min-h-0 bg-neutral-950 relative flex items-center justify-center overflow-hidden select-none">
+            
+            {/* VIEW A: Video Player */}
+            {activeMediaTab === 'video' && videoInfo ? (
+              <div className="w-full h-full p-2 sm:p-4 flex items-center justify-center">
+                <div className="relative w-full h-full max-w-5xl aspect-video max-h-[calc(100%-1rem)] rounded-xl overflow-hidden bg-black border border-[var(--border-strong)] shadow-2xl flex items-center justify-center">
+                  {videoInfo.type === 'direct_video' ? (
+                    <video
+                      src={videoInfo.embedUrl}
+                      controls
+                      autoPlay
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <iframe
+                      src={videoInfo.embedUrl}
+                      title={project.title}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      className="w-full h-full border-0"
+                    />
+                  )}
+                </div>
+              </div>
+            ) : activeMediaTab === 'document' && docInfo ? (
+              /* VIEW B: Presentation & Slides */
+              <div className="w-full h-full p-2 sm:p-4 flex items-center justify-center">
+                <div className="relative w-full h-full max-w-5xl rounded-xl overflow-hidden bg-neutral-900 border border-[var(--border-strong)] shadow-2xl flex flex-col">
+                  {docInfo.type === 'pdf' ? (
+                    <iframe
+                      src={`https://docs.google.com/viewer?url=${encodeURIComponent(docInfo.embedUrl)}&embedded=true`}
+                      title="Visor PDF"
+                      className="w-full h-full border-0"
+                    />
+                  ) : docInfo.type === 'google_slides' || docInfo.type === 'drive' ? (
+                    <iframe
+                      src={docInfo.embedUrl}
+                      title="Presentación Google Slides"
+                      allow="autoplay; fullscreen; clipboard-read; clipboard-write; web-share"
+                      allowFullScreen
+                      className="w-full h-full border-0"
+                    />
+                  ) : docInfo.type === 'pptx' ? (
+                    <iframe
+                      src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(docInfo.embedUrl)}`}
+                      title="Presentación PPTX"
+                      allowFullScreen
+                      className="w-full h-full border-0"
+                    />
+                  ) : isCanva ? (
+                    <div className="relative w-full h-full flex flex-col">
+                      <iframe
+                        src={docInfo.embedUrl}
+                        title={project.title}
+                        allow="autoplay; fullscreen; clipboard-read; clipboard-write; web-share"
+                        allowFullScreen
+                        loading="lazy"
+                        className="w-full h-full border-0 bg-neutral-950"
+                      />
+                      {/* Canva direct open fallback button */}
+                      <div className="absolute top-3 right-3 z-20">
+                        <a
+                          href={canvaDirectUrl || docInfo.originalUrl || docInfo.embedUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 rounded-lg text-xs font-mono font-semibold bg-[#00C4CC] hover:bg-[#00d8e0] text-black shadow-xl transition-transform hover:scale-105 flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Abrir en Canva</span>
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <iframe
+                      src={docInfo.embedUrl}
+                      title="Visor de Documento"
+                      allow="autoplay; fullscreen; clipboard-read; clipboard-write; web-share"
+                      allowFullScreen
+                      className="w-full h-full border-0"
+                    />
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* VIEW C: Artwork Image Carousel */
+              <div className="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={currentImageIndex}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.02 }}
+                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-full h-full flex items-center justify-center select-none"
+                  >
+                    <OptimizedImage
+                      src={carouselImages[currentImageIndex] || project.imageUrl}
+                      alt={`${project.title} - Imagen ${currentImageIndex + 1}`}
+                      priority
+                      quality={90}
+                      wrapperClassName="w-full h-full flex items-center justify-center"
+                      className="w-full h-full object-contain max-h-full max-w-full select-none"
+                    />
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Left/Right Carousel Arrows */}
+                {carouselImages.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentImageIndex(prev => (prev > 0 ? prev - 1 : carouselImages.length - 1))}
+                      className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 p-2 sm:p-2.5 rounded-full bg-black/60 hover:bg-[var(--accent-color)] text-white backdrop-blur-md border border-white/15 transition-all cursor-pointer shadow-lg opacity-75 hover:opacity-100 hover:scale-105 z-20"
+                      aria-label="Imagen anterior"
+                    >
+                      <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setCurrentImageIndex(prev => (prev < carouselImages.length - 1 ? prev + 1 : 0))}
+                      className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 p-2 sm:p-2.5 rounded-full bg-black/60 hover:bg-[var(--accent-color)] text-white backdrop-blur-md border border-white/15 transition-all cursor-pointer shadow-lg opacity-75 hover:opacity-100 hover:scale-105 z-20"
+                      aria-label="Siguiente imagen"
+                    >
+                      <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </button>
+
+                    {/* Image Counter Badge Top-Right */}
+                    <div className="absolute top-3 right-3 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-md text-white text-[11px] font-mono font-bold border border-white/15 shadow flex items-center gap-1.5 z-20">
+                      <Layers className="w-3 h-3 text-[var(--accent-color)]" />
+                      <span>{currentImageIndex + 1} / {carouselImages.length}</span>
+                    </div>
+                  </>
+                )}
+
+                {/* Floating Quick Tab Switcher if video or slides exist */}
                 {videoInfo && activeMediaTab !== 'video' && (
                   <button
+                    type="button"
                     onClick={() => setActiveMediaTab('video')}
-                    className="w-full sm:flex-1 py-3 px-4 text-xs font-semibold uppercase tracking-wider text-white bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] rounded-xl transition-colors cursor-pointer text-center flex items-center justify-center gap-2 shadow-sm"
+                    className="absolute bottom-3 left-3 px-3 py-1.5 bg-black/80 hover:bg-[var(--accent-color)] backdrop-blur-md rounded-xl border border-white/20 text-white text-xs font-mono flex items-center gap-2 cursor-pointer transition-all shadow-lg z-20"
                   >
                     <Play className="w-3.5 h-3.5 fill-white" />
-                    <span>Ver Video</span>
+                    <span>Ver Video ({videoInfo.title})</span>
                   </button>
                 )}
 
-                {docInfo && activeMediaTab !== 'document' && (
+                {!videoInfo && docInfo && activeMediaTab !== 'document' && (
                   <button
+                    type="button"
                     onClick={() => setActiveMediaTab('document')}
-                    className="w-full sm:flex-1 py-3 px-4 text-xs font-semibold uppercase tracking-wider text-white bg-neutral-800 hover:bg-neutral-700 border border-[var(--border-subtle)] rounded-xl transition-colors cursor-pointer text-center flex items-center justify-center gap-2"
+                    className="absolute bottom-3 left-3 px-3 py-1.5 bg-black/80 hover:bg-amber-600 backdrop-blur-md rounded-xl border border-white/20 text-white text-xs font-mono flex items-center gap-2 cursor-pointer transition-all shadow-lg z-20"
                   >
-                    <FileText className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Ver Documento</span>
+                    <Presentation className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Ver Diapositivas</span>
                   </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* 3. SIMPLIFIED DATA FOOTER (Compact, Space-Saving, No Scroll) */}
+          <div className="shrink-0 border-t border-[var(--border-subtle)] bg-[var(--bg-secondary)] px-4 sm:px-6 py-2.5 sm:py-3 transition-colors">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              
+              {/* Left Column: Metadata Pills & Concise Description */}
+              <div className="flex-1 min-w-0 space-y-1">
+                {/* Meta chips row */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-mono text-[var(--text-secondary)]">
+                  <span className="flex items-center gap-1 text-[var(--text-primary)]">
+                    <User className="w-3 h-3 text-[var(--accent-color)]" />
+                    <strong>{project.client || 'Encargo de Estudio'}</strong>
+                  </span>
+                  <span className="text-[var(--text-muted)]">·</span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3 h-3 text-[var(--accent-color)]" />
+                    <span>{project.year}</span>
+                  </span>
+                  <span className="text-[var(--text-muted)]">·</span>
+                  <span className="flex items-center gap-1 text-[var(--accent-color)] font-semibold">
+                    <Tag className="w-3 h-3" />
+                    <span>{project.category}</span>
+                  </span>
+
+                  {/* Concise Tags */}
+                  {project.tags && project.tags.length > 0 && (
+                    <>
+                      <span className="text-[var(--text-muted)] hidden md:inline">·</span>
+                      <span className="text-[var(--text-muted)] hidden md:inline text-[11px] truncate max-w-xs">
+                        {project.tags.slice(0, 3).map(t => `#${t}`).join(' ')}
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                {/* Concise Description: 1 or 2 lines maximum with quick info toggle */}
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-[var(--text-secondary)] line-clamp-1 leading-normal">
+                    {project.description}
+                  </p>
+                  {project.description && project.description.length > 80 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowFullDescription(prev => !prev)}
+                      className="text-[11px] font-mono text-[var(--accent-color)] hover:underline shrink-0 cursor-pointer flex items-center gap-0.5"
+                    >
+                      <Info className="w-3 h-3" />
+                      <span>{showFullDescription ? 'Menos' : 'Más'}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Column: Multi-photo mini thumbnails + Quick Action CTA */}
+              <div className="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+                {/* Mini thumbnail strip for multi-image project */}
+                {activeMediaTab === 'image' && carouselImages.length > 1 && (
+                  <div className="flex items-center gap-1.5 overflow-x-auto max-w-[140px] sm:max-w-none py-0.5">
+                    {carouselImages.map((img, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setCurrentImageIndex(idx)}
+                        className={`relative w-8 h-6 sm:w-9 sm:h-7 rounded overflow-hidden shrink-0 border transition-all cursor-pointer ${
+                          currentImageIndex === idx
+                            ? 'border-[var(--accent-color)] ring-1 ring-[var(--accent-color)] scale-105'
+                            : 'border-white/10 opacity-50 hover:opacity-100'
+                        }`}
+                        title={`Foto ${idx + 1}`}
+                      >
+                        <OptimizedImage 
+                          src={img} 
+                          alt="" 
+                          quality={60}
+                          wrapperClassName="w-full h-full"
+                          className="w-full h-full object-cover" 
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Direct Action Links */}
+                {docInfo && (
+                  <a
+                    href={isCanva ? (canvaDirectUrl || docInfo.originalUrl) : docInfo.originalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors flex items-center gap-1.5 ${
+                      isCanva 
+                        ? 'bg-[#00C4CC] hover:bg-[#00d8e0] text-black font-semibold shadow-sm'
+                        : 'text-[var(--text-primary)] hover:text-white bg-[var(--bg-elevated)] hover:bg-[var(--accent-color)] border border-[var(--border-subtle)]'
+                    }`}
+                    title={isCanva ? 'Abrir presentación interactiva en Canva' : 'Descargar o abrir enlace original'}
+                  >
+                    {isCanva ? (
+                      <>
+                        <Palette className="w-3.5 h-3.5 text-black" />
+                        <span>Abrir en Canva</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Descargar</span>
+                      </>
+                    )}
+                  </a>
                 )}
 
                 <button
+                  type="button"
                   onClick={onClose}
-                  className="w-full sm:flex-1 py-3 px-4 text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl transition-colors cursor-pointer text-center"
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] border border-[var(--border-subtle)] transition-colors cursor-pointer"
                 >
-                  Volver a Galería
+                  Cerrar
                 </button>
               </div>
-            </div>
 
+            </div>
           </div>
+
+          {/* Optional Expanded Description Popover Modal (if user wants to read long manifesto) */}
+          <AnimatePresence>
+            {showFullDescription && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute inset-x-4 bottom-16 sm:bottom-18 max-w-xl mx-auto p-4 sm:p-5 rounded-2xl bg-[var(--modal-bg)] border border-[var(--border-strong)] shadow-2xl z-30 space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-mono uppercase tracking-wider text-[var(--accent-color)] font-semibold flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3" />
+                    <span>Manifiesto & Memoria Completa</span>
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setShowFullDescription(false)}
+                    className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] rounded cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed max-h-48 overflow-y-auto">
+                  {project.description}
+                </p>
+
+                {project.tags && project.tags.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[var(--border-subtle)]">
+                    {project.tags.map((t, idx) => (
+                      <span key={idx} className="px-2 py-0.5 rounded bg-[var(--bg-secondary)] text-[10px] font-mono text-[var(--text-primary)] border border-[var(--border-subtle)]">
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
         </motion.div>
       </div>
     </AnimatePresence>

@@ -19,7 +19,7 @@ import {
   Sliders
 } from 'lucide-react';
 import { DocumentItem } from '../types/portfolio';
-import { parseDocumentUrl, formatGoogleDrivePreviewUrl, formatCanvaEmbedUrl } from '../utils/mediaEmbed';
+import { parseDocumentUrl, formatGoogleDrivePreviewUrl, formatCanvaEmbedUrl, getCanvaDirectViewUrl } from '../utils/mediaEmbed';
 import { Palette } from 'lucide-react';
 
 interface DocumentViewerModalProps {
@@ -52,6 +52,8 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({ docume
     // If external URL, wrap with Microsoft Office online viewer or Google docs viewer
     embedUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(doc.fileUrl)}&embedded=true`;
   }
+
+  const canvaDirectUrl = isCanva ? (getCanvaDirectViewUrl(doc.fileUrl || doc.embedUrl) || doc.fileUrl) : doc.fileUrl;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(doc.fileUrl || embedUrl);
@@ -147,7 +149,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({ docume
               {/* Open in Canva specifically or Download/Open */}
               {isCanva ? (
                 <a
-                  href={doc.fileUrl}
+                  href={canvaDirectUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3 py-1.5 text-xs font-mono font-semibold text-black bg-[#00C4CC] hover:bg-[#00d8e0] rounded-lg transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
@@ -300,8 +302,13 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({ docume
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
+                    {isCanva && (
+                      <span className="text-[10px] text-neutral-400 hidden lg:inline">
+                        ¿El navegador bloquea la inserción?
+                      </span>
+                    )}
                     <a
-                      href={doc.fileUrl}
+                      href={isCanva ? canvaDirectUrl : doc.fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={`hover:underline flex items-center gap-1 font-semibold ${

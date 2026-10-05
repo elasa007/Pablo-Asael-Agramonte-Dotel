@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { ArrowDownRight, Mail, Sparkles, Award, Camera, Edit3 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { SiteProfile } from '../types/portfolio';
+import { OptimizedImage } from './OptimizedImage';
 
 interface HeroSectionProps {
   profile: SiteProfile;
@@ -173,9 +174,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 onClick={isAdmin ? onChangeProfilePhoto : undefined}
               >
                 {/* Studio photo of Lic. Asael Agramonte */}
-                <img
+                <OptimizedImage
                   src={profile.avatarUrl}
                   alt={profile.degreeTitle}
+                  priority
+                  quality={90}
+                  wrapperClassName="w-full h-full"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                 />
 

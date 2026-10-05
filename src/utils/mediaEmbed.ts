@@ -165,13 +165,14 @@ export function parseDocumentUrl(url?: string, docTypeHint?: string): EmbedMedia
   }
 
   // 4. Canva Presentation or Design Public Link
-  const canvaMatch = trimmed.match(/canva\.com\/design\/([a-zA-Z0-9_-]+)/i);
-  if (canvaMatch || docTypeHint === 'canva' || trimmed.includes('canva.com')) {
+  const isCanva = trimmed.includes('canva.com') || docTypeHint === 'canva' || trimmed.includes('canva');
+  if (isCanva) {
     const embed = formatCanvaEmbedUrl(trimmed);
+    const directView = getCanvaDirectViewUrl(trimmed);
     return {
       type: 'canva',
       embedUrl: embed,
-      originalUrl: trimmed,
+      originalUrl: directView || trimmed,
       title: 'Presentación en Canva'
     };
   }
@@ -206,33 +207,95 @@ export function parseDocumentUrl(url?: string, docTypeHint?: string): EmbedMedia
 }
 
 /**
- * Transforms any Canva public view/design URL into a clean embed URL
+ * Transforms any Canva public view/design URL, presentation link, or embed code into a valid embed iframe URL.
+ * Preserves the Canva design ID AND the public view token (e.g. /design/DAG.../TOKEN/view?embed).
  */
 export function formatCanvaEmbedUrl(url: string): string {
-  if (!url) return '';
-  const trimmed = url.trim();
+  if (!url || typeof url !== 'string') return '';
+  let trimmed = url.trim();
 
-  // If already contains /view?embed
+  // 1. If user pasted raw iframe HTML snippet or Canva embed code
+  const srcMatch = trimmed.match(/src=["']([^"']+)["']/i);
+  if (srcMatch && srcMatch[1]) {
+    trimmed = srcMatch[1].trim();
+  }
+
+  // 2. Decode any encoded HTML entities
+  trimmed = trimmed.replace(/&amp;/g, '&');
+
+  // 3. If already has /view?embed or /watch?embed
   if (trimmed.includes('/view?embed') || trimmed.includes('/watch?embed')) {
+    if (!trimmed.startsWith('http')) {
+      trimmed = `https://${trimmed.replace(/^\/\//, '')}`;
+    }
     return trimmed;
   }
 
-  // Extract Canva design ID
-  const match = trimmed.match(/canva\.com\/design\/([a-zA-Z0-9_-]+)/i);
-  if (match && match[1]) {
-    return `https://www.canva.com/design/${match[1]}/view?embed`;
+  // 4. Pattern: canva.com/design/:designId(/:viewToken)(/:action)
+  // Handles:
+  // - https://www.canva.com/design/DAGR5W4Y2vU/view
+  // - https://www.canva.com/design/DAGeXYZ123/kXyZ_4567/view?utm_content=...
+  // - https://www.canva.com/design/DAGeXYZ123/kXyZ_4567/watch
+  // - https://www.canva.com/design/DAGeXYZ123/kXyZ_4567/edit
+  const designRegex = /canva\.com\/design\/([a-zA-Z0-9_-]+)(?:\/([a-zA-Z0-9_-]+))?(?:\/(view|watch|edit|present|preview))?/i;
+  const match = trimmed.match(designRegex);
+
+  if (match) {
+    const designId = match[1];
+    const secondParam = match[2];
+    const isSecondParamAction = secondParam && ['view', 'watch', 'edit', 'present', 'preview'].includes(secondParam.toLowerCase());
+
+    if (isSecondParamAction || !secondParam) {
+      return `https://www.canva.com/design/${designId}/view?embed`;
+    }
+
+    // Preserves BOTH design ID and public view token / slug!
+    return `https://www.canva.com/design/${designId}/${secondParam}/view?embed`;
   }
 
-  // Clean trailing query/hash before formatting
+  // 5. Fallback for other canva URLs
   const cleanUrl = trimmed.split('?')[0].split('#')[0].replace(/\/+$/, '');
-
-  // If URL ends with /view, /watch, or /edit
-  if (/\/(view|watch|edit)$/i.test(cleanUrl)) {
-    return cleanUrl.replace(/\/(view|watch|edit)$/i, '/view?embed');
+  if (/\/(view|watch|edit|present)$/i.test(cleanUrl)) {
+    return cleanUrl.replace(/\/(view|watch|edit|present)$/i, '/view?embed');
   }
 
-  // Otherwise append /view?embed
   return `${cleanUrl}/view?embed`;
+}
+
+/**
+ * Returns a clean, direct public presentation URL to open directly in Canva in a new tab
+ */
+export function getCanvaDirectViewUrl(url: string): string {
+  if (!url || typeof url !== 'string') return '';
+  let trimmed = url.trim();
+
+  const srcMatch = trimmed.match(/src=["']([^"']+)["']/i);
+  if (srcMatch && srcMatch[1]) {
+    trimmed = srcMatch[1].trim();
+  }
+
+  trimmed = trimmed.replace(/&amp;/g, '&');
+
+  if (trimmed.includes('?embed')) {
+    trimmed = trimmed.replace('?embed', '');
+  }
+
+  const designRegex = /canva\.com\/design\/([a-zA-Z0-9_-]+)(?:\/([a-zA-Z0-9_-]+))?(?:\/(view|watch|edit|present|preview))?/i;
+  const match = trimmed.match(designRegex);
+
+  if (match) {
+    const designId = match[1];
+    const secondParam = match[2];
+    const isSecondParamAction = secondParam && ['view', 'watch', 'edit', 'present', 'preview'].includes(secondParam.toLowerCase());
+
+    if (isSecondParamAction || !secondParam) {
+      return `https://www.canva.com/design/${designId}/view`;
+    }
+
+    return `https://www.canva.com/design/${designId}/${secondParam}/view`;
+  }
+
+  return trimmed;
 }
 
 /**

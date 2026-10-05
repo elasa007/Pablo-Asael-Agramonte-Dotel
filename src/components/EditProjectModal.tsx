@@ -163,6 +163,9 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
     if (val.includes('presentation')) {
       setDocumentType('google_slides');
       if (!documentName) setDocumentName('Presentación Google Slides');
+    } else if (val.includes('canva.com') || val.includes('canva')) {
+      setDocumentType('canva');
+      if (!documentName) setDocumentName('Presentación en Canva');
     } else if (val.includes('drive.google.com')) {
       setDocumentType('google_drive');
       if (!documentName) setDocumentName('Documento en Google Drive');

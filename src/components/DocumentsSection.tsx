@@ -20,6 +20,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { DocumentItem } from '../types/portfolio';
+import { OptimizedImage } from './OptimizedImage';
 
 interface DocumentsSectionProps {
   documents: DocumentItem[];
@@ -356,7 +357,7 @@ export const DocumentsSection: React.FC<DocumentsSectionProps> = ({
                   onClick={() => onViewDocument(doc)}
                   className="relative aspect-video bg-neutral-900 overflow-hidden cursor-pointer"
                 >
-                  <img
+                  <OptimizedImage
                     src={doc.thumbnailUrl || (isCanva 
                       ? 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=80'
                       : isGoogleSlides
@@ -364,10 +365,10 @@ export const DocumentsSection: React.FC<DocumentsSectionProps> = ({
                       : 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80'
                     )}
                     alt={doc.title}
+                    quality={80}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent pointer-events-none" />
 
                   {/* Format Badge Top Left */}
                   <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/85 backdrop-blur-md text-[10px] font-mono uppercase text-white font-semibold border border-white/10 flex items-center gap-1.5 shadow">

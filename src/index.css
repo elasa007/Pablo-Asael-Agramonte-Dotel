@@ -85,3 +85,21 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent-color);
 }
+
+/* GPU Acceleration & Animation Fluidity Optimizations */
+.gpu-layer {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform, opacity;
+}
+
+.transition-fluid {
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Ensure smooth image rendering and no layout jitter */
+img {
+  content-visibility: auto;
+}
+

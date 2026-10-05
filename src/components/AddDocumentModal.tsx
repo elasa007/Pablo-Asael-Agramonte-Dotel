@@ -16,7 +16,7 @@ import {
   Palette
 } from 'lucide-react';
 import { DocumentItem } from '../types/portfolio';
-import { parseDocumentUrl, formatGoogleDrivePreviewUrl, formatCanvaEmbedUrl } from '../utils/mediaEmbed';
+import { parseDocumentUrl, formatGoogleDrivePreviewUrl, formatCanvaEmbedUrl, getCanvaDirectViewUrl } from '../utils/mediaEmbed';
 
 interface AddDocumentModalProps {
   isOpen: boolean;
