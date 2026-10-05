@@ -284,14 +284,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <div className="space-y-1">
               <label className="text-xs font-mono text-[var(--text-secondary)] uppercase flex items-center justify-between">
                 <span>Contraseña Maestra</span>
-                <span className="text-[10px] text-[var(--accent-color)]">Demo: admin2026</span>
+                <span className="text-[10px] text-[var(--accent-color)]"></span>
               </label>
               <input
                 type="password"
                 required
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                placeholder="Ingresa admin2026"
+                placeholder="Ingresa tu contraseña"
                 className="w-full px-4 py-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-sm focus:border-[var(--accent-color)] focus:outline-none transition-colors"
               />
             </div>
