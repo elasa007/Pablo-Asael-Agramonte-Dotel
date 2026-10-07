@@ -194,18 +194,18 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/85 backdrop-blur-sm"
-        />
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <motion.div
+            key="section-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/85 backdrop-blur-sm"
+          />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
@@ -1252,6 +1252,7 @@ export const EditSectionModal: React.FC<EditSectionModalProps> = ({
           </form>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };

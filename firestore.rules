@@ -1,0 +1,171 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerified() && (
+        request.auth.token.email == 'elasa007@gmail.com' ||
+        request.auth.token.email == 'asael.agramonte@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    // Validation Helpers
+    function isValidProject(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.category is string && data.category.size() <= 100 &&
+             data.description is string && data.description.size() <= 5000 &&
+             data.client is string && data.client.size() <= 200 &&
+             data.year is string && data.year.size() <= 50 &&
+             data.imageUrl is string && data.imageUrl.size() <= 2000 &&
+             data.createdAt is number;
+    }
+
+    function isValidVideo(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.platform is string && data.platform.size() <= 50 &&
+             data.url is string && data.url.size() <= 2000 &&
+             data.embedUrl is string && data.embedUrl.size() <= 2000 &&
+             data.thumbnailUrl is string && data.thumbnailUrl.size() <= 2000 &&
+             data.createdAt is number;
+    }
+
+    function isValidDocument(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.type is string && data.type.size() <= 50 &&
+             data.source is string && data.source.size() <= 50 &&
+             data.fileUrl is string && data.fileUrl.size() <= 2000 &&
+             data.embedUrl is string && data.embedUrl.size() <= 2000 &&
+             data.createdAt is number;
+    }
+
+    function isValidProfile(data) {
+      return data.name is string && data.name.size() <= 200 &&
+             data.roleTitle is string && data.roleTitle.size() <= 200 &&
+             data.emailPrimary is string && data.emailPrimary.size() <= 200;
+    }
+
+    function isValidExperience(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.role is string && data.role.size() <= 200 &&
+             data.company is string && data.company.size() <= 200 &&
+             data.period is string && data.period.size() <= 100;
+    }
+
+    function isValidEducation(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.institution is string && data.institution.size() <= 200 &&
+             data.year is string && data.year.size() <= 50 &&
+             data.category is string && data.category.size() <= 100;
+    }
+
+    function isValidReference(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.name is string && data.name.size() <= 200 &&
+             data.role is string && data.role.size() <= 200 &&
+             data.organization is string && data.organization.size() <= 200 &&
+             data.phone is string && data.phone.size() <= 100;
+    }
+
+    function isValidSkill(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.name is string && data.name.size() <= 200 &&
+             data.category is string && data.category.size() <= 100 &&
+             data.level is string && data.level.size() <= 100 &&
+             data.percentage is number &&
+             data.description is string && data.description.size() <= 2000;
+    }
+
+    // Collection match blocks
+    match /projects/{projectId} {
+      allow get, list: if true;
+      allow create: if isAdmin() && isValidId(projectId) && isValidProject(incoming());
+      allow update: if isAdmin() && isValidId(projectId) && isValidProject(incoming());
+      allow delete: if isAdmin() && isValidId(projectId);
+    }
+
+    match /profile/{profileId} {
+      allow get, list: if true;
+      allow create, update: if isAdmin() && isValidId(profileId) && isValidProfile(incoming());
+      allow delete: if isAdmin() && isValidId(profileId);
+    }
+
+    match /videos/{videoId} {
+      allow get, list: if true;
+      allow create: if isAdmin() && isValidId(videoId) && isValidVideo(incoming());
+      allow update: if isAdmin() && isValidId(videoId) && isValidVideo(incoming());
+      allow delete: if isAdmin() && isValidId(videoId);
+    }
+
+    match /documents/{documentId} {
+      allow get, list: if true;
+      allow create: if isAdmin() && isValidId(documentId) && isValidDocument(incoming());
+      allow update: if isAdmin() && isValidId(documentId) && isValidDocument(incoming());
+      allow delete: if isAdmin() && isValidId(documentId);
+    }
+
+    match /experiences/{experienceId} {
+      allow get, list: if true;
+      allow create: if isAdmin() && isValidId(experienceId) && isValidExperience(incoming());
+      allow update: if isAdmin() && isValidId(experienceId) && isValidExperience(incoming());
+      allow delete: if isAdmin() && isValidId(experienceId);
+    }
+
+    match /education/{educationId} {
+      allow get, list: if true;
+      allow create: if isAdmin() && isValidId(educationId) && isValidEducation(incoming());
+      allow update: if isAdmin() && isValidId(educationId) && isValidEducation(incoming());
+      allow delete: if isAdmin() && isValidId(educationId);
+    }
+
+    match /references/{referenceId} {
+      allow get, list: if true;
+      allow create: if isAdmin() && isValidId(referenceId) && isValidReference(incoming());
+      allow update: if isAdmin() && isValidId(referenceId) && isValidReference(incoming());
+      allow delete: if isAdmin() && isValidId(referenceId);
+    }
+
+    match /skills/{skillId} {
+      allow get, list: if true;
+      allow create: if isAdmin() && isValidId(skillId) && isValidSkill(incoming());
+      allow update: if isAdmin() && isValidId(skillId) && isValidSkill(incoming());
+      allow delete: if isAdmin() && isValidId(skillId);
+    }
+
+    match /visibility/{visibilityId} {
+      allow get, list: if true;
+      allow create, update: if isAdmin() && isValidId(visibilityId);
+      allow delete: if isAdmin() && isValidId(visibilityId);
+    }
+
+    match /admins/{adminId} {
+      allow get, list: if isAdmin();
+      allow write: if isAdmin() && isValidId(adminId);
+    }
+  }
+}

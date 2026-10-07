@@ -35,33 +35,32 @@ interface ProjectModalProps {
 }
 
 export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) => {
-  if (!project) return null;
-
-  const videoInfo = parseVideoUrl(project.videoUrl);
-  const docInfo = parseDocumentUrl(project.documentUrl, project.documentType);
-
-  // Initial active view: prefer video if category is video, or document if document exists and no video, else image
-  const defaultTab: 'image' | 'video' | 'document' = 
-    project.category === 'Video' && videoInfo 
-      ? 'video' 
-      : project.documentUrl && docInfo && !videoInfo 
-        ? 'document' 
-        : 'image';
-
-  const [activeMediaTab, setActiveMediaTab] = useState<'image' | 'video' | 'document'>(defaultTab);
+  const [activeMediaTab, setActiveMediaTab] = useState<'image' | 'video' | 'document'>('image');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const videoInfo = project?.videoUrl ? parseVideoUrl(project.videoUrl) : null;
+  const docInfo = project?.documentUrl ? parseDocumentUrl(project.documentUrl, project.documentType) : null;
 
   // Carousel images array
-  const carouselImages = (project.images && project.images.length > 0)
+  const carouselImages = (project?.images && project.images.length > 0)
     ? project.images
-    : (project.imageUrl ? [project.imageUrl] : []);
-
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    : (project?.imageUrl ? [project.imageUrl] : []);
 
   // Reset index & tabs when project changes
   useEffect(() => {
+    if (!project) return;
+    const vInfo = project.videoUrl ? parseVideoUrl(project.videoUrl) : null;
+    const dInfo = project.documentUrl ? parseDocumentUrl(project.documentUrl, project.documentType) : null;
+    const defaultTab: 'image' | 'video' | 'document' = 
+      project.category === 'Video' && vInfo 
+        ? 'video' 
+        : project.documentUrl && dInfo && !vInfo 
+          ? 'document' 
+          : 'image';
+
     setCurrentImageIndex(0);
     setActiveMediaTab(defaultTab);
     setIsFullscreen(false);
@@ -70,16 +69,16 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
 
   // Preload adjacent carousel images for instant smooth transitions
   useEffect(() => {
-    if (carouselImages.length > 1) {
-      const nextIdx = (currentImageIndex + 1) % carouselImages.length;
-      const prevIdx = (currentImageIndex - 1 + carouselImages.length) % carouselImages.length;
-      imageOptimizationService.preload(carouselImages[nextIdx]);
-      imageOptimizationService.preload(carouselImages[prevIdx]);
-    }
-  }, [currentImageIndex, carouselImages]);
+    if (!project || carouselImages.length <= 1) return;
+    const nextIdx = (currentImageIndex + 1) % carouselImages.length;
+    const prevIdx = (currentImageIndex - 1 + carouselImages.length) % carouselImages.length;
+    if (carouselImages[nextIdx]) imageOptimizationService.preload(carouselImages[nextIdx]);
+    if (carouselImages[prevIdx]) imageOptimizationService.preload(carouselImages[prevIdx]);
+  }, [project, currentImageIndex, carouselImages]);
 
   // Keyboard navigation
   useEffect(() => {
+    if (!project) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (showFullDescription) {
@@ -108,7 +107,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeMediaTab, carouselImages.length, isFullscreen, showFullDescription, onClose]);
+  }, [project, activeMediaTab, carouselImages.length, isFullscreen, showFullDescription, onClose]);
 
   const handleCopyLink = () => {
     const shareUrl = window.location.origin + window.location.pathname + '#galeria';
@@ -117,43 +116,50 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const isCanva = docInfo?.type === 'canva' || 
-    project.documentType === 'canva' || 
-    Boolean(project.documentUrl && project.documentUrl.includes('canva.com'));
+  const isCanva = Boolean(
+    docInfo?.type === 'canva' || 
+    project?.documentType === 'canva' || 
+    (project?.documentUrl && project.documentUrl.includes('canva.com'))
+  );
 
   const canvaDirectUrl = isCanva 
-    ? (getCanvaDirectViewUrl(project.documentUrl || docInfo?.embedUrl || '') || project.documentUrl) 
+    ? (getCanvaDirectViewUrl(project?.documentUrl || docInfo?.embedUrl || '') || project?.documentUrl || '') 
     : '';
 
-  const isSlideDeck = project.category === 'Diapositivas' || 
+  const isSlideDeck = Boolean(
+    project?.category === 'Diapositivas' || 
     docInfo?.type === 'google_slides' || 
     docInfo?.type === 'pptx' || 
-    isCanva;
+    isCanva
+  );
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 lg:p-6 overflow-hidden">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/90 backdrop-blur-md"
-        />
+      {project && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 lg:p-6 overflow-hidden">
+          {/* Backdrop */}
+          <motion.div
+            key="project-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/90 backdrop-blur-md"
+          />
 
-        {/* Modal Window Container: Fixed height, NO SCROLL */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.97, y: 15 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.97, y: 15 }}
-          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className={`relative w-full bg-[var(--modal-bg)] border border-[var(--border-strong)] rounded-2xl overflow-hidden shadow-2xl z-10 my-auto flex flex-col transition-all duration-300 ${
-            isFullscreen
-              ? 'fixed inset-2 z-50 max-w-none max-h-none h-[calc(100vh-1rem)]'
-              : 'w-[96vw] max-w-6xl 2xl:max-w-7xl h-[88vh] max-h-[88vh]'
-          }`}
-        >
+          {/* Modal Window Container: Fixed height, NO SCROLL */}
+          <motion.div
+            key="project-modal"
+            initial={{ opacity: 0, scale: 0.97, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.97, y: 15 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className={`relative w-full bg-[var(--modal-bg)] border border-[var(--border-strong)] rounded-2xl overflow-hidden shadow-2xl z-10 my-auto flex flex-col transition-all duration-300 ${
+              isFullscreen
+                ? 'fixed inset-2 z-50 max-w-none max-h-none h-[calc(100vh-1rem)]'
+                : 'w-[96vw] max-w-6xl 2xl:max-w-7xl h-[88vh] max-h-[88vh]'
+            }`}
+          >
           {/* 1. COMPACT TOP BAR HEADER (Shrink-0, Zero Overcrowding) */}
           <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 sm:py-3 border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] gap-3 shrink-0">
             
@@ -613,6 +619,7 @@ export const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose }) 
 
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };

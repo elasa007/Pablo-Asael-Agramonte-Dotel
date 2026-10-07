@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -43,33 +43,55 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
   onSave,
   onDelete
 }) => {
-  if (!isOpen || !project) return null;
-
-  const [title, setTitle] = useState(project.title);
-  const [category, setCategory] = useState<SpecialtyCategory>(project.category);
-  const [client, setClient] = useState(project.client);
-  const [year, setYear] = useState(project.year);
-  const [description, setDescription] = useState(project.description);
-  const [tagsInput, setTagsInput] = useState(project.tags.join(', '));
-  const [imageUrl, setImageUrl] = useState(project.imageUrl);
+  const [title, setTitle] = useState(project?.title || '');
+  const [category, setCategory] = useState<SpecialtyCategory>(project?.category || 'Social Media');
+  const [client, setClient] = useState(project?.client || '');
+  const [year, setYear] = useState(project?.year || '');
+  const [description, setDescription] = useState(project?.description || '');
+  const [tagsInput, setTagsInput] = useState(project?.tags ? project.tags.join(', ') : '');
+  const [imageUrl, setImageUrl] = useState(project?.imageUrl || '');
   const [images, setImages] = useState<string[]>(() => {
-    if (Array.isArray(project.images) && project.images.length > 0) {
+    if (project && Array.isArray(project.images) && project.images.length > 0) {
       return project.images;
     }
-    return project.imageUrl ? [project.imageUrl] : [];
+    return project?.imageUrl ? [project.imageUrl] : [];
   });
   const [newImageInputUrl, setNewImageInputUrl] = useState('');
-  const [featured, setFeatured] = useState(Boolean(project.featured));
+  const [featured, setFeatured] = useState(Boolean(project?.featured));
   
   // Video and Document fields
-  const [videoUrl, setVideoUrl] = useState(project.videoUrl || '');
-  const [documentUrl, setDocumentUrl] = useState(project.documentUrl || '');
-  const [documentName, setDocumentName] = useState(project.documentName || '');
-  const [documentType, setDocumentType] = useState<string>(project.documentType || 'none');
+  const [videoUrl, setVideoUrl] = useState(project?.videoUrl || '');
+  const [documentUrl, setDocumentUrl] = useState(project?.documentUrl || '');
+  const [documentName, setDocumentName] = useState(project?.documentName || '');
+  const [documentType, setDocumentType] = useState<string>(project?.documentType || 'none');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const multiFileInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync state whenever project changes or modal opens
+  useEffect(() => {
+    if (project) {
+      setTitle(project.title || '');
+      setCategory(project.category || 'Social Media');
+      setClient(project.client || '');
+      setYear(project.year || '');
+      setDescription(project.description || '');
+      setTagsInput(project.tags ? project.tags.join(', ') : '');
+      setImageUrl(project.imageUrl || '');
+      setImages(
+        Array.isArray(project.images) && project.images.length > 0
+          ? project.images
+          : (project.imageUrl ? [project.imageUrl] : [])
+      );
+      setFeatured(Boolean(project.featured));
+      setVideoUrl(project.videoUrl || '');
+      setDocumentUrl(project.documentUrl || '');
+      setDocumentName(project.documentName || '');
+      setDocumentType(project.documentType || 'none');
+      setNewImageInputUrl('');
+    }
+  }, [project, isOpen]);
 
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -181,6 +203,8 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!project) return;
+
     const tags = tagsInput
       .split(',')
       .map(t => t.trim())
@@ -210,15 +234,17 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/85 backdrop-blur-sm"
-        />
+      {isOpen && project && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          {/* Backdrop */}
+          <motion.div
+            key="edit-project-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/85 backdrop-blur-sm"
+          />
 
         {/* Modal Window */}
         <motion.div
@@ -563,7 +589,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  if (confirm(`¿Eliminar definitivamente "${project.title}"?`)) {
+                  if (project && confirm(`¿Eliminar definitivamente "${project.title}"?`)) {
                     onDelete(project.id);
                     onClose();
                   }
@@ -594,6 +620,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
           </form>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };

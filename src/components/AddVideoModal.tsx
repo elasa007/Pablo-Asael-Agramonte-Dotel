@@ -67,8 +67,6 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
     setError(null);
   }, [videoToEdit, isOpen]);
 
-  if (!isOpen) return null;
-
   const parsed = parseVideoUrl(url);
 
   // Auto-fill thumbnail if YouTube and no custom thumbnail
@@ -112,14 +110,16 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/85 backdrop-blur-md"
-        />
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <motion.div
+            key="video-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/85 backdrop-blur-md"
+          />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 15 }}
@@ -367,6 +367,7 @@ export const AddVideoModal: React.FC<AddVideoModalProps> = ({
           </form>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };

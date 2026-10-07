@@ -1,0 +1,234 @@
+{
+  "entities": {
+    "Project": {
+      "title": "Project",
+      "description": "Portfolio creative project showcase",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 5000 },
+        "client": { "type": "string", "maxLength": 200 },
+        "year": { "type": "string", "maxLength": 20 },
+        "imageUrl": { "type": "string", "maxLength": 2000 },
+        "images": { "type": "array" },
+        "videoUrl": { "type": "string", "maxLength": 2000 },
+        "videoPlatform": { "type": "string", "maxLength": 50 },
+        "documentUrl": { "type": "string", "maxLength": 2000 },
+        "documentType": { "type": "string", "maxLength": 50 },
+        "documentName": { "type": "string", "maxLength": 250 },
+        "aspectRatio": { "type": "string", "maxLength": 50 },
+        "tags": { "type": "array" },
+        "featured": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "title", "category", "description", "client", "year", "imageUrl", "createdAt"]
+    },
+    "SiteProfile": {
+      "title": "SiteProfile",
+      "description": "Professional profile and site configuration",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 200 },
+        "degreeTitle": { "type": "string", "maxLength": 200 },
+        "roleTitle": { "type": "string", "maxLength": 200 },
+        "heroHeadlineTop": { "type": "string", "maxLength": 200 },
+        "heroHeadlineBottom": { "type": "string", "maxLength": 200 },
+        "heroKicker": { "type": "string", "maxLength": 300 },
+        "bioSummary": { "type": "string", "maxLength": 5000 },
+        "bioDetailed": { "type": "string", "maxLength": 5000 },
+        "avatarUrl": { "type": "string", "maxLength": 2000 },
+        "profilePhotos": { "type": "array" },
+        "emailPrimary": { "type": "string", "maxLength": 200 },
+        "emailSecondary": { "type": "string", "maxLength": 200 },
+        "phones": { "type": "array" },
+        "address": { "type": "string", "maxLength": 500 },
+        "stat1Value": { "type": "string", "maxLength": 50 },
+        "stat1Label": { "type": "string", "maxLength": 100 },
+        "stat2Value": { "type": "string", "maxLength": 50 },
+        "stat2Label": { "type": "string", "maxLength": 100 },
+        "stat3Value": { "type": "string", "maxLength": 50 },
+        "stat3Label": { "type": "string", "maxLength": 100 },
+        "manifestoText": { "type": "string", "maxLength": 5000 },
+        "socialInstagram": { "type": "string", "maxLength": 200 },
+        "socialLinkedin": { "type": "string", "maxLength": 200 },
+        "socialBehance": { "type": "string", "maxLength": 200 },
+        "socialWhatsapp": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["name", "roleTitle", "emailPrimary"]
+    },
+    "VideoItem": {
+      "title": "VideoItem",
+      "description": "Audiovisual showreel or video piece",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 100 },
+        "platform": { "type": "string", "maxLength": 50 },
+        "url": { "type": "string", "maxLength": 2000 },
+        "embedUrl": { "type": "string", "maxLength": 2000 },
+        "thumbnailUrl": { "type": "string", "maxLength": 2000 },
+        "duration": { "type": "string", "maxLength": 50 },
+        "client": { "type": "string", "maxLength": 200 },
+        "year": { "type": "string", "maxLength": 50 },
+        "description": { "type": "string", "maxLength": 5000 },
+        "featured": { "type": "boolean" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "title", "platform", "url", "embedUrl", "thumbnailUrl", "createdAt"]
+    },
+    "DocumentItem": {
+      "title": "DocumentItem",
+      "description": "Corporate slides, presentation or PDF document",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "type": { "type": "string", "maxLength": 50 },
+        "source": { "type": "string", "maxLength": 50 },
+        "fileUrl": { "type": "string", "maxLength": 2000 },
+        "embedUrl": { "type": "string", "maxLength": 2000 },
+        "thumbnailUrl": { "type": "string", "maxLength": 2000 },
+        "size": { "type": "string", "maxLength": 100 },
+        "pageCount": { "type": "string", "maxLength": 100 },
+        "category": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 5000 },
+        "client": { "type": "string", "maxLength": 200 },
+        "year": { "type": "string", "maxLength": 50 },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "title", "type", "source", "fileUrl", "embedUrl", "createdAt"]
+    },
+    "WorkExperience": {
+      "title": "WorkExperience",
+      "description": "Professional experience position",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "maxLength": 200 },
+        "company": { "type": "string", "maxLength": 200 },
+        "period": { "type": "string", "maxLength": 100 },
+        "description": { "type": "array" }
+      },
+      "required": ["id", "role", "company", "period", "description"]
+    },
+    "EducationItem": {
+      "title": "EducationItem",
+      "description": "Academic and training certification",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "institution": { "type": "string", "maxLength": 200 },
+        "year": { "type": "string", "maxLength": 50 },
+        "category": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 5000 }
+      },
+      "required": ["id", "title", "institution", "year", "category"]
+    },
+    "ReferenceItem": {
+      "title": "ReferenceItem",
+      "description": "Professional work reference",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 200 },
+        "role": { "type": "string", "maxLength": 200 },
+        "organization": { "type": "string", "maxLength": 200 },
+        "phone": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 200 },
+        "relation": { "type": "string", "maxLength": 200 }
+      },
+      "required": ["id", "name", "role", "organization", "phone"]
+    },
+    "SkillItem": {
+      "title": "SkillItem",
+      "description": "Technical software skill or proficiency",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 200 },
+        "category": { "type": "string", "maxLength": 100 },
+        "level": { "type": "string", "maxLength": 100 },
+        "percentage": { "type": "number" },
+        "description": { "type": "string", "maxLength": 2000 },
+        "iconName": { "type": "string", "maxLength": 100 },
+        "accentColor": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["id", "name", "category", "level", "percentage", "description"]
+    },
+    "SectionVisibility": {
+      "title": "SectionVisibility",
+      "description": "Section visibility toggle flags",
+      "type": "object",
+      "properties": {
+        "hero": { "type": "boolean" },
+        "specialties": { "type": "boolean" },
+        "skills": { "type": "boolean" },
+        "gallery": { "type": "boolean" },
+        "videos": { "type": "boolean" },
+        "documents": { "type": "boolean" },
+        "experience": { "type": "boolean" },
+        "education": { "type": "boolean" },
+        "references": { "type": "boolean" },
+        "contact": { "type": "boolean" }
+      },
+      "required": ["hero", "gallery", "videos", "documents"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Admin authorization entry",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 200 },
+        "role": { "type": "string", "maxLength": 50 },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "Portfolio creative projects"
+    },
+    "/profile/current": {
+      "schema": { "$ref": "#/entities/SiteProfile" },
+      "description": "Site profile, biographical copy, and contact info"
+    },
+    "/videos/{videoId}": {
+      "schema": { "$ref": "#/entities/VideoItem" },
+      "description": "Audiovisual showcase and showreels"
+    },
+    "/documents/{documentId}": {
+      "schema": { "$ref": "#/entities/DocumentItem" },
+      "description": "Corporate presentations and slide decks"
+    },
+    "/experiences/{experienceId}": {
+      "schema": { "$ref": "#/entities/WorkExperience" },
+      "description": "Work history timeline"
+    },
+    "/education/{educationId}": {
+      "schema": { "$ref": "#/entities/EducationItem" },
+      "description": "Education and certifications"
+    },
+    "/references/{referenceId}": {
+      "schema": { "$ref": "#/entities/ReferenceItem" },
+      "description": "Professional references"
+    },
+    "/skills/{skillId}": {
+      "schema": { "$ref": "#/entities/SkillItem" },
+      "description": "Technical software competencies"
+    },
+    "/visibility/current": {
+      "schema": { "$ref": "#/entities/SectionVisibility" },
+      "description": "Section visibility settings"
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Authorized administrator accounts"
+    }
+  }
+}

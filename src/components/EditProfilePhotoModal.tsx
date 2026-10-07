@@ -72,8 +72,6 @@ export const EditProfilePhotoModal: React.FC<EditProfilePhotoModalProps> = ({
     }
   }, [isOpen, currentPhoto]);
 
-  if (!isOpen) return null;
-
   const processFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
       setErrorMessage('Por favor selecciona un archivo de imagen válido (JPG, PNG, WebP).');
@@ -158,15 +156,17 @@ export const EditProfilePhotoModal: React.FC<EditProfilePhotoModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/85 backdrop-blur-sm"
-        />
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          {/* Backdrop */}
+          <motion.div
+            key="photo-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/85 backdrop-blur-sm"
+          />
 
         {/* Modal Box */}
         <motion.div
@@ -409,6 +409,7 @@ export const EditProfilePhotoModal: React.FC<EditProfilePhotoModalProps> = ({
           </div>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };

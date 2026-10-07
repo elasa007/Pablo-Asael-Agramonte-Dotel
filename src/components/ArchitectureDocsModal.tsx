@@ -50,8 +50,6 @@ export const ArchitectureDocsModal: React.FC<ArchitectureDocsModalProps> = ({ is
   const [activeTab, setActiveTab] = useState<'paso1' | 'paso2_firebase' | 'paso2_gas'>('paso1');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  if (!isOpen) return null;
-
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
@@ -60,15 +58,17 @@ export const ArchitectureDocsModal: React.FC<ArchitectureDocsModalProps> = ({ is
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/85 backdrop-blur-md"
-        />
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          {/* Backdrop */}
+          <motion.div
+            key="arch-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/85 backdrop-blur-md"
+          />
 
         {/* Modal Window */}
         <motion.div
@@ -215,6 +215,7 @@ export const ArchitectureDocsModal: React.FC<ArchitectureDocsModalProps> = ({ is
           </div>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };

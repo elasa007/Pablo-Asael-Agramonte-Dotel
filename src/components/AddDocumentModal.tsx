@@ -94,8 +94,6 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
     setError(null);
   }, [docToEdit, isOpen]);
 
-  if (!isOpen) return null;
-
   // Handle local file upload (PDF or PPTX)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -209,14 +207,16 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/85 backdrop-blur-md"
-        />
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <motion.div
+            key="doc-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/85 backdrop-blur-md"
+          />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 15 }}
@@ -584,6 +584,7 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
           </form>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };

@@ -41,6 +41,8 @@ import {
   SkillItem
 } from './types/portfolio';
 import { Lock, ArrowUp, Eye, Sparkles } from 'lucide-react';
+import { useAuth } from './context/AuthContext';
+import { testConnection } from './firebase';
 
 function PortfolioApp() {
   const [currentView, setCurrentView] = useState<'portfolio' | 'admin'>('portfolio');
@@ -85,15 +87,22 @@ function PortfolioApp() {
     SiteContentService.getSectionVisibility()
   );
 
-  // Strictly reactive Admin Authentication state
-  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+  const { currentUser, isAdmin: authIsAdmin } = useAuth();
+  const [localAdmin, setLocalAdmin] = useState<boolean>(() => {
     return localStorage.getItem('creativo_admin_auth') === 'true';
   });
+
+  const isAdmin = Boolean(authIsAdmin || localAdmin);
+
+  // Test Firestore connection on boot
+  useEffect(() => {
+    testConnection();
+  }, []);
 
   // Sync auth state immediately on login/logout
   useEffect(() => {
     const handleAuthChange = () => {
-      setIsAdmin(localStorage.getItem('creativo_admin_auth') === 'true');
+      setLocalAdmin(localStorage.getItem('creativo_admin_auth') === 'true');
     };
     window.addEventListener('auth-change', handleAuthChange);
     window.addEventListener('storage', handleAuthChange);
@@ -240,10 +249,10 @@ function PortfolioApp() {
     setSkills(SiteContentService.getSkills());
   };
 
-  const handleResetDefaults = () => {
-    const reset = ProjectService.resetToDefaults();
+  const handleResetDefaults = async () => {
+    const reset = await ProjectService.resetToDefaults();
     setProjects([...reset]);
-    SiteContentService.resetAllToDefaults();
+    await SiteContentService.resetAllToDefaults();
   };
 
   const handleToggleSection = (key: keyof SectionVisibility) => {
@@ -670,7 +679,7 @@ function PortfolioApp() {
             onViewDocument={(d) => setActiveModalDocument(d)}
             onOpenArchitectureDocs={() => setIsArchitectureModalOpen(true)}
             onProfileUpdated={(updatedProfile) => setProfile(updatedProfile)}
-            onAuthStatusChange={(status) => setIsAdmin(status)}
+            onAuthStatusChange={(status) => setLocalAdmin(status)}
           />
         )}
       </main>

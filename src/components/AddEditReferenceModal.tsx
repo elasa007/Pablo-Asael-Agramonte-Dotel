@@ -56,8 +56,6 @@ export const AddEditReferenceModal: React.FC<AddEditReferenceModalProps> = ({
     setConfirmDelete(false);
   }, [referenceToEdit, isOpen]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -83,14 +81,16 @@ export const AddEditReferenceModal: React.FC<AddEditReferenceModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/85 backdrop-blur-md"
-        />
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <motion.div
+            key="reference-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/85 backdrop-blur-md"
+          />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 15 }}
@@ -272,6 +272,7 @@ export const AddEditReferenceModal: React.FC<AddEditReferenceModalProps> = ({
           </form>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };

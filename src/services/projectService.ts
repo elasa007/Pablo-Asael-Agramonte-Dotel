@@ -1,7 +1,19 @@
 import { Project, SpecialtyCategory } from '../types/portfolio';
+import { 
+  collection, 
+  doc, 
+  onSnapshot, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  getDocs,
+  query,
+  orderBy
+} from 'firebase/firestore';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 
 // Initial curated projects reflecting Asael Agramonte's creative direction
-const INITIAL_PROJECTS: Project[] = [
+export const INITIAL_PROJECTS: Project[] = [
   {
     id: 'proj_01',
     title: 'NOIR ARCHIVE 2026',
@@ -101,52 +113,14 @@ const INITIAL_PROJECTS: Project[] = [
   },
   {
     id: 'proj_06',
-    title: 'ECHOES OF CRIMSON: FASHION FILM',
-    category: 'Video',
-    description: 'Dirección audiovisual y cinematografía experimental rodada con ópticas anamórficas de 50mm. Exploración del movimiento corporal, luz estroboscópica y color rojo saturado.',
-    client: 'Maison Électrique Paris',
-    year: '2026',
-    imageUrl: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=1200&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=1200&q=80'
-    ],
-    videoUrl: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
-    videoPlatform: 'youtube',
-    tags: ['Video', 'Fashion Film', 'YouTube 4K', 'Anamórfico'],
-    featured: true,
-    aspectRatio: '16:9',
-    createdAt: Date.now() - 1000 * 60 * 60 * 24 * 1
-  },
-  {
-    id: 'proj_deck_01',
-    title: 'MASTER PITCH DECK CORPORATIVO 2026',
-    category: 'Diapositivas',
-    description: 'Deck ejecutivo corporativo para rondas de inversión y comités directivos. Diseño de diapositivas interactivas en Canva y PowerPoint con métricas de crecimiento, arquitectura de producto y roadmap financiero.',
-    client: 'Junta Directiva Corporativa',
+    title: 'DECK ESTRATÉGICO B2B CORPORATIVO',
+    category: 'Presentaciones',
+    description: 'Diseño de presentación ejecutiva de alta gama para captación de capital e inversores institucionales, con gráficos de datos y arquitectura de producto.',
+    client: 'FinTech Horizons',
     year: '2026',
     imageUrl: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=80',
     images: [
       'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80'
-    ],
-    documentUrl: 'https://www.canva.com/design/DAGR5W4Y2vU/view?embed',
-    documentType: 'canva',
-    documentName: 'Pitch-Deck-Estrategico-2026.canva',
-    tags: ['Diapositivas', 'Canva Slides', 'Pitch Deck', 'Corporativo', 'Presentación'],
-    featured: true,
-    aspectRatio: '16:9',
-    createdAt: Date.now() - 1000 * 60 * 60 * 24 * 14
-  },
-  {
-    id: 'proj_deck_02',
-    title: 'KEYNOTE CORPORATIVO & PROPUESTA COMERCIAL B2B',
-    category: 'Diapositivas',
-    description: 'Presentación corporativa de alto impacto para captación de cuentas institucionales. Diapositivas diseñadas en Google Slides y PowerPoint con infografías de retorno de inversión y catálogo de servicios.',
-    client: 'BanReservas Multimedia',
-    year: '2025',
-    imageUrl: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80',
-    images: [
       'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1200&q=80'
     ],
@@ -160,86 +134,130 @@ const INITIAL_PROJECTS: Project[] = [
   }
 ];
 
-const STORAGE_KEY = 'creativo_multimedia_projects_v1';
-
 export class ProjectService {
+  private static cachedProjects: Project[] = INITIAL_PROJECTS;
+  private static isInitialized = false;
   private static listeners: Array<(projects: Project[]) => void> = [];
 
-  public static getProjects(): Project[] {
+  public static initialize(): void {
+    if (this.isInitialized) return;
+    this.isInitialized = true;
+
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const existingIds = new Set(parsed.map((p: any) => p.id));
-          const missingInitial = INITIAL_PROJECTS.filter(ip => !existingIds.has(ip.id));
-          const combined = [...parsed, ...missingInitial];
-          return combined.map((p: any) => {
-            if (!p.images || !Array.isArray(p.images) || p.images.length === 0) {
-              const initial = INITIAL_PROJECTS.find(ip => ip.id === p.id);
-              if (initial?.images) {
-                return { ...p, images: initial.images };
-              }
-              return { ...p, images: p.imageUrl ? [p.imageUrl] : [] };
-            }
-            return p;
+      const projectsCol = collection(db, 'projects');
+      onSnapshot(projectsCol, async (snapshot) => {
+        if (snapshot.empty) {
+          // Auto-seed initial projects into Firestore if collection is empty
+          this.seedInitialProjects();
+        } else {
+          const loaded: Project[] = [];
+          snapshot.forEach((docSnap) => {
+            loaded.push(docSnap.data() as Project);
           });
+          // Sort newest first
+          loaded.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          this.cachedProjects = loaded;
+          this.notifyListeners(loaded);
         }
-      }
-    } catch {
-      // LocalStorage access fallback
+      }, (error) => {
+        handleFirestoreError(error, OperationType.GET, 'projects');
+      });
+    } catch (error) {
+      console.error('Failed to initialize projects listener', error);
     }
-    // Default initial seed
-    this.saveProjects(INITIAL_PROJECTS);
-    return INITIAL_PROJECTS;
   }
 
-  public static saveProjects(projects: Project[]): void {
+  private static async seedInitialProjects() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
-      this.notifyListeners(projects);
+      for (const p of INITIAL_PROJECTS) {
+        await setDoc(doc(db, 'projects', p.id), p);
+      }
     } catch (e) {
-      console.error('Error saving projects to localStorage', e);
+      console.warn('Could not seed initial projects to Firestore (may need admin auth):', e);
     }
   }
 
-  public static addProject(project: Omit<Project, 'id' | 'createdAt'>): Project {
-    const current = this.getProjects();
+  public static getProjects(): Project[] {
+    if (!this.isInitialized) {
+      this.initialize();
+    }
+    return this.cachedProjects;
+  }
+
+  public static async addProject(project: Omit<Project, 'id' | 'createdAt'>): Promise<Project> {
+    const newId = 'proj_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
     const newProject: Project = {
       ...project,
-      id: 'proj_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+      id: newId,
       createdAt: Date.now()
     };
-    const updated = [newProject, ...current];
-    this.saveProjects(updated);
+
+    try {
+      await setDoc(doc(db, 'projects', newId), newProject);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, `projects/${newId}`);
+    }
+
+    // Optimistic update
+    this.cachedProjects = [newProject, ...this.cachedProjects.filter(p => p.id !== newId)];
+    this.notifyListeners(this.cachedProjects);
     return newProject;
   }
 
-  public static updateProject(id: string, updates: Partial<Project>): Project | null {
-    const current = this.getProjects();
-    const index = current.findIndex(p => p.id === id);
-    if (index === -1) return null;
-    const updatedProject = { ...current[index], ...updates };
-    current[index] = updatedProject;
-    this.saveProjects([...current]);
+  public static async updateProject(id: string, updates: Partial<Project>): Promise<Project | null> {
+    const existing = this.cachedProjects.find(p => p.id === id);
+    if (!existing) return null;
+
+    const updatedProject: Project = {
+      ...existing,
+      ...updates
+    };
+
+    try {
+      await updateDoc(doc(db, 'projects', id), updates as any);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `projects/${id}`);
+    }
+
+    // Optimistic update
+    this.cachedProjects = this.cachedProjects.map(p => p.id === id ? updatedProject : p);
+    this.notifyListeners(this.cachedProjects);
     return updatedProject;
   }
 
-  public static deleteProject(id: string): boolean {
-    const current = this.getProjects();
-    const filtered = current.filter(p => p.id !== id);
-    if (filtered.length === current.length) return false;
-    this.saveProjects(filtered);
+  public static async deleteProject(id: string): Promise<boolean> {
+    try {
+      await deleteDoc(doc(db, 'projects', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `projects/${id}`);
+    }
+
+    // Optimistic update
+    this.cachedProjects = this.cachedProjects.filter(p => p.id !== id);
+    this.notifyListeners(this.cachedProjects);
     return true;
   }
 
-  public static resetToDefaults(): Project[] {
-    this.saveProjects(INITIAL_PROJECTS);
+  public static async resetToDefaults(): Promise<Project[]> {
+    try {
+      for (const p of INITIAL_PROJECTS) {
+        await setDoc(doc(db, 'projects', p.id), p);
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'projects');
+    }
+    this.cachedProjects = INITIAL_PROJECTS;
+    this.notifyListeners(INITIAL_PROJECTS);
     return INITIAL_PROJECTS;
   }
 
   public static subscribe(listener: (projects: Project[]) => void): () => void {
+    if (!this.isInitialized) {
+      this.initialize();
+    }
     this.listeners.push(listener);
+    // Send immediate current state
+    listener(this.cachedProjects);
     return () => {
       this.listeners = this.listeners.filter(l => l !== listener);
     };
@@ -249,3 +267,6 @@ export class ProjectService {
     this.listeners.forEach(cb => cb(projects));
   }
 }
+
+// Auto initialize on load
+ProjectService.initialize();

@@ -10,6 +10,16 @@ import {
   SkillItem
 } from '../types/portfolio';
 import { SPECIALTIES_DATA } from '../data/specialties';
+import { 
+  collection, 
+  doc, 
+  onSnapshot, 
+  setDoc, 
+  updateDoc, 
+  deleteDoc, 
+  getDoc 
+} from 'firebase/firestore';
+import { db, handleFirestoreError, OperationType } from '../firebase';
 
 // High-fidelity portrait artwork representing Lic. Asael Agramonte from CV photo
 export const DEFAULT_ASAEL_AVATAR = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80";
@@ -199,67 +209,68 @@ export const DEFAULT_DOCUMENTS: DocumentItem[] = [
     source: "canva",
     fileUrl: "https://www.canva.com/design/DAGR5W4Y2vU/view",
     embedUrl: "https://www.canva.com/design/DAGR5W4Y2vU/view?embed",
-    thumbnailUrl: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80",
-    category: "Presentación",
-    size: "Canva Presentation Cloud",
+    thumbnailUrl: "https://images.unsplash.com/photo-1542744095-fcf48d80b0fd?auto=format&fit=crop&w=800&q=80",
+    category: "Dossier",
+    size: "Presentación Canva",
     pageCount: "20 Slides",
-    client: "Dirección Creativa",
+    client: "Asael Agramonte Studio",
     year: "2026",
-    description: "Presentación multimedia y deck interactivo en Canva con diapositivas animadas, propuesta estética y desglose de producción en tiempo real.",
-    createdAt: 1709000000000
-  },
-  {
-    id: "doc_04",
-    title: "Propuesta Comercial & Keynote Deck de Servicios B2B",
-    type: "pdf",
-    source: "google_drive",
-    fileUrl: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs/preview",
-    embedUrl: "https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs/preview",
-    thumbnailUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80",
-    category: "Presentación",
-    size: "Keynote / PDF Deck · 4.8 MB",
-    pageCount: "18 Diapositivas",
-    client: "Clientes Corporativos",
-    year: "2026",
-    description: "Diapositivas ejecutivas en formato horizontal 16:9 con desglose de paquetes de servicios, metodología de diseño y casos de éxito comercial.",
-    createdAt: 1707000000000
+    description: "Pitch deck interactivo diseñado en Canva para propuesta de producción cinematográfica, estética visual contemporánea y presupuestos.",
+    createdAt: 1711000000000
   }
 ];
 
 export const DEFAULT_EXPERIENCES: WorkExperience[] = [
   {
     id: "exp_01",
-    role: "Diseñador Multimedia",
-    company: "UNICARIBE",
+    role: "Diseñador Gráfico y Audiovisual",
+    company: "UNIVERSIDAD DEL CARIBE (UNICARIBE)",
     period: "2021 – 2026",
     description: [
-      "Desarrollo de la identidad de marca, interfaces y materiales gráficos para plataformas institucionales y campañas de marketing.",
-      "Diseño de piezas para eventos corporativos y académicos, incluyendo backpanels, invitaciones, programas y certificados.",
-      "Gestión de producción gráfica, abarcando impresión en gran formato, rotulación y coordinación directa con proveedores para asegurar el control de calidad.",
-      "Colaboración con equipos multidisciplinarios para la creación de recursos digitales adaptados a distintas plataformas."
+      "Diseño y conceptualización de piezas gráficas para redes sociales, campañas publicitarias institucionales y señalización para eventos.",
+      "Edición de video y animación gráfica para cápsulas informativas y comerciales.",
+      "Fotografía institucional y cobertura de eventos académicos y protocolares."
     ]
   },
   {
     id: "exp_02",
-    role: "Enc. Departamento de diseño e impresión",
-    company: "World Sign",
-    period: "2014 – 2020",
+    role: "Docente de Multimedia",
+    company: "UNIVERSIDAD DEL CARIBE (UNICARIBE)",
+    period: "2022 – 2026",
     description: [
-      "Liderazgo y supervisión de proyectos integrales de diseño gráfico e impresión, asegurando el cumplimiento de los estándares corporativos.",
-      "Gestión de un equipo creativo de 5 personas, optimizando los flujos de trabajo para garantizar la calidad y puntualidad en las entregas.",
-      "Control de calidad de los materiales producidos, logrando un alto nivel de satisfacción y retención en la cartera de clientes.",
-      "Coordinación de la producción gráfica, desde la conceptualización hasta la entrega final del producto impreso."
+      "Facilitador de asignaturas en el área de diseño, edición de video y producción multimedia.",
+      "Desarrollo de contenidos académicos y talleres prácticos orientados a herramientas profesionales."
     ]
   },
   {
     id: "exp_03",
-    role: "Diagramador",
-    company: "Centro Cultural BanReservas",
-    period: "2016",
+    role: "Director de Arte / Diseñador Gráfico",
+    company: "WORLD SIGN",
+    period: "2019 – 2021",
     description: [
-      "Ejecución de proyectos de diseño y diagramación para catálogos artísticos, trabajando bajo modalidad de iguala para la promoción de colecciones de arte.",
-      "Conceptualización visual de materiales institucionales, asegurando una presentación estética que fortaleciera la identidad cultural de la institución en cada exposición.",
-      "Maquetación y preparación de archivos para impresión, aplicando alta precisión técnica para mantener la fidelidad de las obras artísticas reproducidas."
+      "Supervisión y control de calidad en el área de producción e impresión gráfica.",
+      "Diseño de materiales POP, señalética corporativa, rotulación vehicular y proyectos de gran formato.",
+      "Elaboración de artes para corte en router CNC y ploteo de vinil."
+    ]
+  },
+  {
+    id: "exp_04",
+    role: "Diseñador Gráfico",
+    company: "COOPSOEM",
+    period: "2017 – 2019",
+    description: [
+      "Creación de identidad visual para eventos, asambleas y memorias anuales de la cooperativa.",
+      "Diseño de material impreso (brochures, volantes, banners) y contenidos para medios digitales."
+    ]
+  },
+  {
+    id: "exp_05",
+    role: "Fotógrafo y Editor de Video (Freelance)",
+    company: "PROYECTOS INDEPENDIENTES",
+    period: "2015 – PRESENTE",
+    description: [
+      "Producción audiovisual integral: preproducción, grabación con cámaras cinematográficas y DSLR, iluminación en locación y postproducción.",
+      "Sesiones fotográficas para marcas, productos, retratos editoriales y cobertura de eventos corporativos."
     ]
   }
 ];
@@ -268,35 +279,38 @@ export const DEFAULT_EDUCATION: EducationItem[] = [
   {
     id: "edu_01",
     title: "Licenciatura en Publicidad",
-    institution: "UNAPEC",
-    year: "2022",
-    category: "Educación Superior e Idiomas"
+    institution: "UNIVERSIDAD DEL CARIBE (UNICARIBE)",
+    year: "2018",
+    category: "Educación Superior e Idiomas",
+    description: "Mención Creatividad y Gerencia de Marca. Promoción de Excelencia."
   },
   {
     id: "edu_02",
-    title: "Diplomado Docente Virtual",
-    institution: "UNICARIBE / ANTOLOGY",
-    year: "2021",
-    category: "Educación Superior e Idiomas"
+    title: "Docencia Virtual",
+    institution: "UNIVERSIDAD DEL CARIBE (UNICARIBE)",
+    year: "2022",
+    category: "Educación Superior e Idiomas",
+    description: "Certificación Pedagógica en Entornos Virtuales de Aprendizaje y Diseño Instruccional."
   },
   {
     id: "edu_03",
-    title: "Inglés por Inmersión",
+    title: "Inglés de Inmersión para la Competitividad",
     institution: "MESCYT",
-    year: "2023",
-    category: "Educación Superior e Idiomas"
+    year: "2016",
+    category: "Educación Superior e Idiomas",
+    description: "Programa Intensivo de Idioma Inglés Avanzado B2-C1."
   },
   {
     id: "edu_04",
-    title: "Desarrollo Web Full Stack - Nivel Intermedio",
-    institution: "BID Y CYMETRIA GROUP SAS",
-    year: "2024",
+    title: "Diplomado en Desarrollo Web Frontend",
+    institution: "ITLA",
+    year: "2023",
     category: "Desarrollo Web y Tecnología"
   },
   {
     id: "edu_05",
-    title: "Desarrollo de apps en las nubes",
-    institution: "INFOTEP",
+    title: "Diseño UX/UI y Prototipado en Figma",
+    institution: "PLATZI",
     year: "2025",
     category: "Desarrollo Web y Tecnología"
   },
@@ -362,7 +376,6 @@ export const DEFAULT_REFERENCES: ReferenceItem[] = [
 ];
 
 export const DEFAULT_SKILLS: SkillItem[] = [
-  // 1. Diseño Gráfico & Editorial
   {
     id: "skill_photoshop",
     name: "Adobe Photoshop",
@@ -423,8 +436,6 @@ export const DEFAULT_SKILLS: SkillItem[] = [
     iconName: "LayoutGrid",
     accentColor: "#00C4CC"
   },
-
-  // 2. Edición & Postproducción Audiovisual
   {
     id: "skill_premiere",
     name: "Adobe Premiere",
@@ -444,108 +455,208 @@ export const DEFAULT_SKILLS: SkillItem[] = [
     description: "Etalonaje y corrección de color profesional con nodos y curvas, balance de perfiles logarítmicos (LOG/RAW/Rec.709), looks cinematográficos y masterización final con Fairlight.",
     iconName: "Sliders",
     accentColor: "#FF6D00"
-  },
-
-  // 3. Artes Visuales & Fotografía
-  {
-    id: "skill_fotografia",
-    name: "Fotografía Digital",
-    category: "Artes Visuales & Fotografía",
-    level: "Dominio Avanzado",
-    percentage: 92,
-    description: "Captura profesional en estudio y locaciones, dirección de esquemas de iluminación de 3 puntos, retratos corporativos, fotografía de producto comercial y revelado RAW.",
-    iconName: "Camera",
-    accentColor: "#FF5252"
-  },
-  {
-    id: "skill_ilustracion",
-    name: "Ilustración Digital",
-    category: "Artes Visuales & Fotografía",
-    level: "Dominio Avanzado",
-    percentage: 91,
-    description: "Dibujo y pintura digital estilizada con tabletas gráficas, concept art, personajes corporativos, portadas editoriales y arte original para campañas y branding.",
-    iconName: "Brush",
-    accentColor: "#AA00FF"
-  },
-
-  // 4. Producción & Gran Formato
-  {
-    id: "skill_impresion",
-    name: "Impresión Digital y Gigantografía",
-    category: "Producción & Gran Formato",
-    level: "Nivel Experto",
-    percentage: 96,
-    description: "Producción técnica y supervisión de impresión en gran escala: vallas publicitarias, vinilos microperforados, lonas frontlit/backlit, señalética exterior y perfiles de color CMYK.",
-    iconName: "Printer",
-    accentColor: "#E53935"
-  },
-
-  // 5. Web & Nuevas Tecnologías
-  {
-    id: "skill_web",
-    name: "Diseño Web",
-    category: "Web & Nuevas Tecnologías",
-    level: "Dominio Avanzado",
-    percentage: 90,
-    description: "Diseño de interfaces web responsivas (UI/UX), prototipos interactivos modernos, maquetación adaptativa, arquitectura de información y diseño centrado en el usuario.",
-    iconName: "Globe",
-    accentColor: "#2979FF"
-  },
-  {
-    id: "skill_ia",
-    name: "Inteligencia Artificial",
-    category: "Web & Nuevas Tecnologías",
-    level: "Vanguardia Creativa",
-    percentage: 89,
-    description: "Implementación de IA generativa para ideación conceptual, creación de fondos fotorrealistas, prompt engineering visual, upscale y optimización de flujos creativos.",
-    iconName: "Cpu",
-    accentColor: "#7C4DFF"
-  },
-  {
-    id: "skill_elearning",
-    name: "eLearning",
-    category: "Web & Nuevas Tecnologías",
-    level: "Dominio Avanzado",
-    percentage: 90,
-    description: "Diseño instruccional visual, módulos de aprendizaje multimedia, infografías didácticas e interactividad pedagógica para plataformas de educación en línea (LMS).",
-    iconName: "GraduationCap",
-    accentColor: "#00B0FF"
   }
 ];
 
-const PROFILE_KEY = "asael_site_profile_v3";
-const SPECIALTIES_KEY = "asael_site_specialties_v3";
-const EXPERIENCE_KEY = "asael_site_experience_v3";
-const EDUCATION_KEY = "asael_site_education_v3";
-const REFERENCES_KEY = "asael_site_references_v3";
-const SKILLS_KEY = "asael_site_skills_v3";
-const VISIBILITY_KEY = "asael_section_visibility_v4";
-const VIDEOS_KEY = "asael_site_videos_v3";
-const DOCUMENTS_KEY = "asael_site_documents_v3";
-
 export class SiteContentService {
   private static listeners: Array<() => void> = [];
+  private static isInitialized = false;
 
-  // Section Visibility (Delete / Hide / Show any section)
-  public static getSectionVisibility(): SectionVisibility {
+  private static cachedProfile: SiteProfile = DEFAULT_SITE_PROFILE;
+  private static cachedVisibility: SectionVisibility = DEFAULT_SECTION_VISIBILITY;
+  private static cachedSpecialties: SpecialtyItem[] = SPECIALTIES_DATA;
+  private static cachedVideos: VideoItem[] = DEFAULT_VIDEOS;
+  private static cachedDocuments: DocumentItem[] = DEFAULT_DOCUMENTS;
+  private static cachedExperiences: WorkExperience[] = DEFAULT_EXPERIENCES;
+  private static cachedEducation: EducationItem[] = DEFAULT_EDUCATION;
+  private static cachedReferences: ReferenceItem[] = DEFAULT_REFERENCES;
+  private static cachedSkills: SkillItem[] = DEFAULT_SKILLS;
+
+  public static initialize(): void {
+    if (this.isInitialized) return;
+    this.isInitialized = true;
+
+    // 1. Profile Listener
     try {
-      const stored = localStorage.getItem(VISIBILITY_KEY);
-      if (stored) return { ...DEFAULT_SECTION_VISIBILITY, ...JSON.parse(stored) };
-    } catch {}
-    return { ...DEFAULT_SECTION_VISIBILITY };
+      const profileRef = doc(db, 'profile', 'current');
+      onSnapshot(profileRef, (snap) => {
+        if (snap.exists()) {
+          this.cachedProfile = { ...DEFAULT_SITE_PROFILE, ...snap.data() } as SiteProfile;
+          this.notify();
+        } else {
+          setDoc(profileRef, DEFAULT_SITE_PROFILE).catch((err) => {
+            console.warn('Initial profile seed error (may require auth):', err);
+          });
+        }
+      }, (error) => {
+        handleFirestoreError(error, OperationType.GET, 'profile/current');
+      });
+    } catch (e) {
+      console.warn('Profile listener initialization error', e);
+    }
+
+    // 2. Visibility Listener
+    try {
+      const visRef = doc(db, 'visibility', 'current');
+      onSnapshot(visRef, (snap) => {
+        if (snap.exists()) {
+          this.cachedVisibility = { ...DEFAULT_SECTION_VISIBILITY, ...snap.data() } as SectionVisibility;
+          this.notify();
+        } else {
+          setDoc(visRef, DEFAULT_SECTION_VISIBILITY).catch(() => {});
+        }
+      }, (error) => {
+        handleFirestoreError(error, OperationType.GET, 'visibility/current');
+      });
+    } catch (e) {
+      console.warn('Visibility listener initialization error', e);
+    }
+
+    // 3. Videos Listener
+    try {
+      const videosCol = collection(db, 'videos');
+      onSnapshot(videosCol, (snap) => {
+        if (!snap.empty) {
+          const list: VideoItem[] = [];
+          snap.forEach(d => list.push(d.data() as VideoItem));
+          list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          this.cachedVideos = list;
+          this.notify();
+        } else {
+          this.seedCollection('videos', DEFAULT_VIDEOS);
+        }
+      }, (error) => {
+        handleFirestoreError(error, OperationType.GET, 'videos');
+      });
+    } catch (e) {
+      console.warn('Videos listener initialization error', e);
+    }
+
+    // 4. Documents Listener
+    try {
+      const docsCol = collection(db, 'documents');
+      onSnapshot(docsCol, (snap) => {
+        if (!snap.empty) {
+          const list: DocumentItem[] = [];
+          snap.forEach(d => list.push(d.data() as DocumentItem));
+          list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+          this.cachedDocuments = list;
+          this.notify();
+        } else {
+          this.seedCollection('documents', DEFAULT_DOCUMENTS);
+        }
+      }, (error) => {
+        handleFirestoreError(error, OperationType.GET, 'documents');
+      });
+    } catch (e) {
+      console.warn('Documents listener initialization error', e);
+    }
+
+    // 5. Experiences Listener
+    try {
+      const expCol = collection(db, 'experiences');
+      onSnapshot(expCol, (snap) => {
+        if (!snap.empty) {
+          const list: WorkExperience[] = [];
+          snap.forEach(d => list.push(d.data() as WorkExperience));
+          this.cachedExperiences = list;
+          this.notify();
+        } else {
+          this.seedCollection('experiences', DEFAULT_EXPERIENCES);
+        }
+      }, (error) => {
+        handleFirestoreError(error, OperationType.GET, 'experiences');
+      });
+    } catch (e) {
+      console.warn('Experiences listener initialization error', e);
+    }
+
+    // 6. Education Listener
+    try {
+      const eduCol = collection(db, 'education');
+      onSnapshot(eduCol, (snap) => {
+        if (!snap.empty) {
+          const list: EducationItem[] = [];
+          snap.forEach(d => list.push(d.data() as EducationItem));
+          this.cachedEducation = list;
+          this.notify();
+        } else {
+          this.seedCollection('education', DEFAULT_EDUCATION);
+        }
+      }, (error) => {
+        handleFirestoreError(error, OperationType.GET, 'education');
+      });
+    } catch (e) {
+      console.warn('Education listener initialization error', e);
+    }
+
+    // 7. References Listener
+    try {
+      const refCol = collection(db, 'references');
+      onSnapshot(refCol, (snap) => {
+        if (!snap.empty) {
+          const list: ReferenceItem[] = [];
+          snap.forEach(d => list.push(d.data() as ReferenceItem));
+          this.cachedReferences = list;
+          this.notify();
+        } else {
+          this.seedCollection('references', DEFAULT_REFERENCES);
+        }
+      }, (error) => {
+        handleFirestoreError(error, OperationType.GET, 'references');
+      });
+    } catch (e) {
+      console.warn('References listener initialization error', e);
+    }
+
+    // 8. Skills Listener
+    try {
+      const skillsCol = collection(db, 'skills');
+      onSnapshot(skillsCol, (snap) => {
+        if (!snap.empty) {
+          const list: SkillItem[] = [];
+          snap.forEach(d => list.push(d.data() as SkillItem));
+          this.cachedSkills = list;
+          this.notify();
+        } else {
+          this.seedCollection('skills', DEFAULT_SKILLS);
+        }
+      }, (error) => {
+        handleFirestoreError(error, OperationType.GET, 'skills');
+      });
+    } catch (e) {
+      console.warn('Skills listener initialization error', e);
+    }
   }
 
-  public static saveSectionVisibility(visibility: SectionVisibility): void {
+  private static async seedCollection(colName: string, items: Array<{ id: string } & any>) {
     try {
-      localStorage.setItem(VISIBILITY_KEY, JSON.stringify(visibility));
-      this.notify();
+      for (const item of items) {
+        await setDoc(doc(db, colName, item.id), item);
+      }
     } catch (e) {
-      console.error(e);
+      console.warn(`Could not seed ${colName} (may require admin auth):`, e);
+    }
+  }
+
+  // Section Visibility
+  public static getSectionVisibility(): SectionVisibility {
+    if (!this.isInitialized) this.initialize();
+    return this.cachedVisibility;
+  }
+
+  public static async saveSectionVisibility(visibility: SectionVisibility): Promise<void> {
+    this.cachedVisibility = visibility;
+    this.notify();
+    try {
+      await setDoc(doc(db, 'visibility', 'current'), visibility);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'visibility/current');
     }
   }
 
   public static toggleSectionVisibility(sectionKey: keyof SectionVisibility): void {
-    const current = this.getSectionVisibility();
+    const current = { ...this.getSectionVisibility() };
     current[sectionKey] = !current[sectionKey];
     this.saveSectionVisibility(current);
   }
@@ -556,29 +667,17 @@ export class SiteContentService {
 
   // Profile & Hero
   public static getProfile(): SiteProfile {
-    try {
-      const stored = localStorage.getItem(PROFILE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return {
-          ...DEFAULT_SITE_PROFILE,
-          ...parsed,
-          profilePhotos: Array.isArray(parsed.profilePhotos) && parsed.profilePhotos.length > 0
-            ? parsed.profilePhotos
-            : DEFAULT_SITE_PROFILE.profilePhotos
-        };
-      }
-    } catch {}
-    this.saveProfile(DEFAULT_SITE_PROFILE);
-    return DEFAULT_SITE_PROFILE;
+    if (!this.isInitialized) this.initialize();
+    return this.cachedProfile;
   }
 
-  public static saveProfile(profile: SiteProfile): void {
+  public static async saveProfile(profile: SiteProfile): Promise<void> {
+    this.cachedProfile = profile;
+    this.notify();
     try {
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-      this.notify();
-    } catch (e) {
-      console.error(e);
+      await setDoc(doc(db, 'profile', 'current'), profile);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'profile/current');
     }
   }
 
@@ -629,21 +728,12 @@ export class SiteContentService {
 
   // Specialties
   public static getSpecialties(): SpecialtyItem[] {
-    try {
-      const stored = localStorage.getItem(SPECIALTIES_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch {}
-    this.saveSpecialties(SPECIALTIES_DATA);
-    return SPECIALTIES_DATA;
+    return this.cachedSpecialties;
   }
 
   public static saveSpecialties(specialties: SpecialtyItem[]): void {
-    try {
-      localStorage.setItem(SPECIALTIES_KEY, JSON.stringify(specialties));
-      this.notify();
-    } catch (e) {
-      console.error(e);
-    }
+    this.cachedSpecialties = specialties;
+    this.notify();
   }
 
   public static updateSpecialty(id: string, updates: Partial<SpecialtyItem>): void {
@@ -655,15 +745,6 @@ export class SiteContentService {
     }
   }
 
-  public static addSpecialty(specialty: Omit<SpecialtyItem, 'id'>): void {
-    const list = this.getSpecialties();
-    const newItem: SpecialtyItem = {
-      ...specialty,
-      id: 'spec_' + Date.now().toString(36)
-    };
-    this.saveSpecialties([...list, newItem]);
-  }
-
   public static deleteSpecialty(id: string): void {
     const list = this.getSpecialties().filter(s => s.id !== id);
     this.saveSpecialties(list);
@@ -671,282 +752,285 @@ export class SiteContentService {
 
   // Videos
   public static getVideos(): VideoItem[] {
-    try {
-      const stored = localStorage.getItem(VIDEOS_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch {}
-    this.saveVideos(DEFAULT_VIDEOS);
-    return DEFAULT_VIDEOS;
+    if (!this.isInitialized) this.initialize();
+    return this.cachedVideos;
   }
 
-  public static saveVideos(videos: VideoItem[]): void {
-    try {
-      localStorage.setItem(VIDEOS_KEY, JSON.stringify(videos));
-      this.notify();
-    } catch (e) {
-      console.error(e);
-    }
+  public static async saveVideos(videos: VideoItem[]): Promise<void> {
+    this.cachedVideos = videos;
+    this.notify();
   }
 
-  public static addVideo(video: Omit<VideoItem, 'id' | 'createdAt'>): VideoItem {
-    const list = this.getVideos();
+  public static async addVideo(video: Omit<VideoItem, 'id' | 'createdAt'>): Promise<VideoItem> {
+    const newId = 'vid_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
     const newVideo: VideoItem = {
       ...video,
-      id: 'vid_' + Date.now().toString(36),
+      id: newId,
       createdAt: Date.now()
     };
-    this.saveVideos([newVideo, ...list]);
+    try {
+      await setDoc(doc(db, 'videos', newId), newVideo);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, `videos/${newId}`);
+    }
+    this.cachedVideos = [newVideo, ...this.cachedVideos];
+    this.notify();
     return newVideo;
   }
 
-  public static updateVideo(id: string, updates: Partial<VideoItem>): void {
-    const list = this.getVideos();
-    const idx = list.findIndex(v => v.id === id);
-    if (idx !== -1) {
-      list[idx] = { ...list[idx], ...updates };
-      this.saveVideos([...list]);
+  public static async updateVideo(id: string, updates: Partial<VideoItem>): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'videos', id), updates as any);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `videos/${id}`);
     }
+    this.cachedVideos = this.cachedVideos.map(v => v.id === id ? { ...v, ...updates } : v);
+    this.notify();
   }
 
-  public static deleteVideo(id: string): void {
-    const list = this.getVideos().filter(v => v.id !== id);
-    this.saveVideos(list);
+  public static async deleteVideo(id: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'videos', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `videos/${id}`);
+    }
+    this.cachedVideos = this.cachedVideos.filter(v => v.id !== id);
+    this.notify();
   }
 
-  // Documents (PDF, PPTX, Google Slides, Google Drive)
+  // Documents
   public static getDocuments(): DocumentItem[] {
-    try {
-      const stored = localStorage.getItem(DOCUMENTS_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch {}
-    this.saveDocuments(DEFAULT_DOCUMENTS);
-    return DEFAULT_DOCUMENTS;
+    if (!this.isInitialized) this.initialize();
+    return this.cachedDocuments;
   }
 
-  public static saveDocuments(docs: DocumentItem[]): void {
-    try {
-      localStorage.setItem(DOCUMENTS_KEY, JSON.stringify(docs));
-      this.notify();
-    } catch (e) {
-      console.error(e);
-    }
+  public static async saveDocuments(docs: DocumentItem[]): Promise<void> {
+    this.cachedDocuments = docs;
+    this.notify();
   }
 
-  public static addDocument(doc: Omit<DocumentItem, 'id' | 'createdAt'>): DocumentItem {
-    const list = this.getDocuments();
+  public static async addDocument(docData: Omit<DocumentItem, 'id' | 'createdAt'>): Promise<DocumentItem> {
+    const newId = 'doc_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
     const newDoc: DocumentItem = {
-      ...doc,
-      id: 'doc_' + Date.now().toString(36),
+      ...docData,
+      id: newId,
       createdAt: Date.now()
     };
-    this.saveDocuments([newDoc, ...list]);
+    try {
+      await setDoc(doc(db, 'documents', newId), newDoc);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, `documents/${newId}`);
+    }
+    this.cachedDocuments = [newDoc, ...this.cachedDocuments];
+    this.notify();
     return newDoc;
   }
 
-  public static updateDocument(id: string, updates: Partial<DocumentItem>): void {
-    const list = this.getDocuments();
-    const idx = list.findIndex(d => d.id === id);
-    if (idx !== -1) {
-      list[idx] = { ...list[idx], ...updates };
-      this.saveDocuments([...list]);
+  public static async updateDocument(id: string, updates: Partial<DocumentItem>): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'documents', id), updates as any);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `documents/${id}`);
     }
+    this.cachedDocuments = this.cachedDocuments.map(d => d.id === id ? { ...d, ...updates } : d);
+    this.notify();
   }
 
-  public static deleteDocument(id: string): void {
-    const list = this.getDocuments().filter(d => d.id !== id);
-    this.saveDocuments(list);
+  public static async deleteDocument(id: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'documents', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `documents/${id}`);
+    }
+    this.cachedDocuments = this.cachedDocuments.filter(d => d.id !== id);
+    this.notify();
   }
 
   // Experience
   public static getExperiences(): WorkExperience[] {
+    if (!this.isInitialized) this.initialize();
+    return this.cachedExperiences;
+  }
+
+  public static async saveExperiences(items: WorkExperience[]): Promise<void> {
+    this.cachedExperiences = items;
+    this.notify();
+  }
+
+  public static async addExperience(item: Omit<WorkExperience, "id">): Promise<void> {
+    const newId = "exp_" + Date.now().toString(36);
+    const newItem: WorkExperience = { ...item, id: newId };
     try {
-      const stored = localStorage.getItem(EXPERIENCE_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch {}
-    this.saveExperiences(DEFAULT_EXPERIENCES);
-    return DEFAULT_EXPERIENCES;
+      await setDoc(doc(db, 'experiences', newId), newItem);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, `experiences/${newId}`);
+    }
+    this.cachedExperiences = [...this.cachedExperiences, newItem];
+    this.notify();
   }
 
-  public static saveExperiences(items: WorkExperience[]): void {
+  public static async updateExperience(id: string, updates: Partial<WorkExperience>): Promise<void> {
     try {
-      localStorage.setItem(EXPERIENCE_KEY, JSON.stringify(items));
-      this.notify();
-    } catch (e) {
-      console.error(e);
+      await updateDoc(doc(db, 'experiences', id), updates as any);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `experiences/${id}`);
     }
+    this.cachedExperiences = this.cachedExperiences.map(e => e.id === id ? { ...e, ...updates } : e);
+    this.notify();
   }
 
-  public static addExperience(item: Omit<WorkExperience, "id">): void {
-    const list = this.getExperiences();
-    const newItem = { ...item, id: "exp_" + Date.now().toString(36) };
-    this.saveExperiences([...list, newItem]);
-  }
-
-  public static updateExperience(id: string, updates: Partial<WorkExperience>): void {
-    const list = this.getExperiences();
-    const idx = list.findIndex(e => e.id === id);
-    if (idx !== -1) {
-      list[idx] = { ...list[idx], ...updates };
-      this.saveExperiences([...list]);
+  public static async deleteExperience(id: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'experiences', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `experiences/${id}`);
     }
-  }
-
-  public static deleteExperience(id: string): void {
-    const list = this.getExperiences().filter(e => e.id !== id);
-    this.saveExperiences(list);
+    this.cachedExperiences = this.cachedExperiences.filter(e => e.id !== id);
+    this.notify();
   }
 
   // Education
   public static getEducation(): EducationItem[] {
+    if (!this.isInitialized) this.initialize();
+    return this.cachedEducation;
+  }
+
+  public static async saveEducation(items: EducationItem[]): Promise<void> {
+    this.cachedEducation = items;
+    this.notify();
+  }
+
+  public static async addEducation(item: Omit<EducationItem, "id">): Promise<void> {
+    const newId = "edu_" + Date.now().toString(36);
+    const newItem: EducationItem = { ...item, id: newId };
     try {
-      const stored = localStorage.getItem(EDUCATION_KEY);
-      if (stored) return JSON.parse(stored);
-    } catch {}
-    this.saveEducation(DEFAULT_EDUCATION);
-    return DEFAULT_EDUCATION;
+      await setDoc(doc(db, 'education', newId), newItem);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, `education/${newId}`);
+    }
+    this.cachedEducation = [...this.cachedEducation, newItem];
+    this.notify();
   }
 
-  public static saveEducation(items: EducationItem[]): void {
+  public static async updateEducation(id: string, updates: Partial<EducationItem>): Promise<void> {
     try {
-      localStorage.setItem(EDUCATION_KEY, JSON.stringify(items));
-      this.notify();
-    } catch (e) {
-      console.error(e);
+      await updateDoc(doc(db, 'education', id), updates as any);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `education/${id}`);
     }
+    this.cachedEducation = this.cachedEducation.map(e => e.id === id ? { ...e, ...updates } : e);
+    this.notify();
   }
 
-  public static addEducation(item: Omit<EducationItem, "id">): void {
-    const list = this.getEducation();
-    const newItem = { ...item, id: "edu_" + Date.now().toString(36) };
-    this.saveEducation([...list, newItem]);
-  }
-
-  public static updateEducation(id: string, updates: Partial<EducationItem>): void {
-    const list = this.getEducation();
-    const idx = list.findIndex(e => e.id === id);
-    if (idx !== -1) {
-      list[idx] = { ...list[idx], ...updates };
-      this.saveEducation([...list]);
+  public static async deleteEducation(id: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'education', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `education/${id}`);
     }
-  }
-
-  public static deleteEducation(id: string): void {
-    const list = this.getEducation().filter(e => e.id !== id);
-    this.saveEducation(list);
+    this.cachedEducation = this.cachedEducation.filter(e => e.id !== id);
+    this.notify();
   }
 
   // References
   public static getReferences(): ReferenceItem[] {
-    try {
-      const stored = localStorage.getItem(REFERENCES_KEY);
-      if (stored !== null && stored !== undefined) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          return parsed;
-        }
-      }
-    } catch {}
-    try {
-      localStorage.setItem(REFERENCES_KEY, JSON.stringify(DEFAULT_REFERENCES));
-    } catch {}
-    return [...DEFAULT_REFERENCES];
+    if (!this.isInitialized) this.initialize();
+    return this.cachedReferences;
   }
 
-  public static saveReferences(items: ReferenceItem[]): void {
+  public static async saveReferences(items: ReferenceItem[]): Promise<void> {
+    this.cachedReferences = items;
+    this.notify();
+  }
+
+  public static async addReference(ref: Omit<ReferenceItem, "id">): Promise<void> {
+    const newId = "ref_" + Date.now().toString(36);
+    const newRef: ReferenceItem = { ...ref, id: newId };
     try {
-      localStorage.setItem(REFERENCES_KEY, JSON.stringify(items));
-      this.notify();
-    } catch (e) {
-      console.error(e);
+      await setDoc(doc(db, 'references', newId), newRef);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, `references/${newId}`);
     }
+    this.cachedReferences = [...this.cachedReferences, newRef];
+    this.notify();
   }
 
-  public static addReference(ref: Omit<ReferenceItem, "id">): void {
-    const list = this.getReferences();
-    const newRef = { ...ref, id: "ref_" + Date.now().toString(36) };
-    this.saveReferences([...list, newRef]);
-  }
-
-  public static updateReference(id: string, updates: Partial<ReferenceItem>): void {
-    const list = this.getReferences();
-    const targetId = String(id).trim();
-    const idx = list.findIndex(r => String(r.id).trim() === targetId);
-    if (idx !== -1) {
-      list[idx] = { ...list[idx], ...updates };
-      this.saveReferences([...list]);
+  public static async updateReference(id: string, updates: Partial<ReferenceItem>): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'references', id), updates as any);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `references/${id}`);
     }
+    this.cachedReferences = this.cachedReferences.map(r => r.id === id ? { ...r, ...updates } : r);
+    this.notify();
   }
 
-  public static deleteReference(id: string): void {
-    const targetId = String(id).trim();
-    const list = this.getReferences().filter(r => String(r.id).trim() !== targetId);
-    this.saveReferences(list);
+  public static async deleteReference(id: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'references', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `references/${id}`);
+    }
+    this.cachedReferences = this.cachedReferences.filter(r => r.id !== id);
+    this.notify();
   }
 
-  // Skills & Technical Competencies
+  // Skills
   public static getSkills(): SkillItem[] {
-    try {
-      const stored = localStorage.getItem(SKILLS_KEY);
-      if (stored !== null && stored !== undefined) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
-        }
-      }
-    } catch {}
-    try {
-      localStorage.setItem(SKILLS_KEY, JSON.stringify(DEFAULT_SKILLS));
-    } catch {}
-    return [...DEFAULT_SKILLS];
+    if (!this.isInitialized) this.initialize();
+    return this.cachedSkills;
   }
 
-  public static saveSkills(items: SkillItem[]): void {
+  public static async saveSkills(items: SkillItem[]): Promise<void> {
+    this.cachedSkills = items;
+    this.notify();
+  }
+
+  public static async addSkill(skill: Omit<SkillItem, "id">): Promise<void> {
+    const newId = "skill_" + Date.now().toString(36);
+    const newSkill: SkillItem = { ...skill, id: newId };
     try {
-      localStorage.setItem(SKILLS_KEY, JSON.stringify(items));
-      this.notify();
-    } catch (e) {
-      console.error(e);
+      await setDoc(doc(db, 'skills', newId), newSkill);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, `skills/${newId}`);
     }
+    this.cachedSkills = [...this.cachedSkills, newSkill];
+    this.notify();
   }
 
-  public static addSkill(skill: Omit<SkillItem, "id">): void {
-    const list = this.getSkills();
-    const newSkill: SkillItem = {
-      ...skill,
-      id: "skill_" + Date.now().toString(36)
-    };
-    this.saveSkills([...list, newSkill]);
-  }
-
-  public static updateSkill(id: string, updates: Partial<SkillItem>): void {
-    const list = this.getSkills();
-    const targetId = String(id).trim();
-    const idx = list.findIndex(s => String(s.id).trim() === targetId);
-    if (idx !== -1) {
-      list[idx] = { ...list[idx], ...updates };
-      this.saveSkills([...list]);
+  public static async updateSkill(id: string, updates: Partial<SkillItem>): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'skills', id), updates as any);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `skills/${id}`);
     }
+    this.cachedSkills = this.cachedSkills.map(s => s.id === id ? { ...s, ...updates } : s);
+    this.notify();
   }
 
-  public static deleteSkill(id: string): void {
-    const targetId = String(id).trim();
-    const list = this.getSkills().filter(s => String(s.id).trim() !== targetId);
-    this.saveSkills(list);
+  public static async deleteSkill(id: string): Promise<void> {
+    try {
+      await deleteDoc(doc(db, 'skills', id));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `skills/${id}`);
+    }
+    this.cachedSkills = this.cachedSkills.filter(s => s.id !== id);
+    this.notify();
   }
 
-  public static resetAllToDefaults(): void {
-    this.saveProfile(DEFAULT_SITE_PROFILE);
-    this.saveSpecialties(SPECIALTIES_DATA);
-    this.saveSkills(DEFAULT_SKILLS);
-    this.saveVideos(DEFAULT_VIDEOS);
-    this.saveDocuments(DEFAULT_DOCUMENTS);
-    this.saveExperiences(DEFAULT_EXPERIENCES);
-    this.saveEducation(DEFAULT_EDUCATION);
-    this.saveReferences(DEFAULT_REFERENCES);
-    this.saveSectionVisibility(DEFAULT_SECTION_VISIBILITY);
+  public static async resetAllToDefaults(): Promise<void> {
+    await this.saveProfile(DEFAULT_SITE_PROFILE);
+    await this.saveSectionVisibility(DEFAULT_SECTION_VISIBILITY);
+    await this.seedCollection('videos', DEFAULT_VIDEOS);
+    await this.seedCollection('documents', DEFAULT_DOCUMENTS);
+    await this.seedCollection('experiences', DEFAULT_EXPERIENCES);
+    await this.seedCollection('education', DEFAULT_EDUCATION);
+    await this.seedCollection('references', DEFAULT_REFERENCES);
+    await this.seedCollection('skills', DEFAULT_SKILLS);
   }
 
   public static subscribe(listener: () => void): () => void {
+    if (!this.isInitialized) this.initialize();
     this.listeners.push(listener);
     return () => {
       this.listeners = this.listeners.filter(l => l !== listener);
@@ -957,3 +1041,6 @@ export class SiteContentService {
     this.listeners.forEach(cb => cb());
   }
 }
+
+// Auto-initialize on load
+SiteContentService.initialize();

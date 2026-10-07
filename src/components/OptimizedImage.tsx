@@ -30,10 +30,31 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   onError,
   ...rest
 }) => {
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(() => {
+    return typeof src === 'string' && (src.startsWith('data:') || src.startsWith('blob:'));
+  });
   const [hasError, setHasError] = useState(false);
   const [isInView, setIsInView] = useState(priority);
   const containerRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // Check if image is already loaded from cache or complete in DOM
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+      setIsLoaded(true);
+    }
+  }, [src, isInView]);
+
+  // Reset or initialize states when src changes
+  useEffect(() => {
+    if (typeof src === 'string' && (src.startsWith('data:') || src.startsWith('blob:'))) {
+      setIsLoaded(true);
+      setHasError(false);
+    } else {
+      setIsLoaded(false);
+      setHasError(false);
+    }
+  }, [src]);
 
   // IntersectionObserver for lazy loading triggers
   useEffect(() => {
@@ -49,7 +70,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
             }
           });
         },
-        { rootMargin: '200px 0px' } // Pre-fetch 200px before entering viewport
+        { rootMargin: '250px 0px' }
       );
 
       observer.observe(containerRef.current);
@@ -59,15 +80,11 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     }
   }, [priority, isInView]);
 
-  // Reset states if src changes
-  useEffect(() => {
-    setIsLoaded(false);
-    setHasError(false);
-  }, [src]);
-
-  const currentSrc = hasError ? fallbackSrc : src;
-  const webpSrc = imageOptimizationService.getOptimizedUrl(currentSrc, { quality, format: 'webp' });
-  const srcSet = imageOptimizationService.getSrcSet(currentSrc);
+  const currentSrc = hasError ? fallbackSrc : (src || fallbackSrc);
+  const isDataUri = currentSrc.startsWith('data:') || currentSrc.startsWith('blob:');
+  const webpSrc = isDataUri ? '' : imageOptimizationService.getOptimizedUrl(currentSrc, { quality, format: 'webp' });
+  const srcSet = isDataUri ? '' : imageOptimizationService.getSrcSet(currentSrc);
+  const hasRealWebp = Boolean(!isDataUri && webpSrc && webpSrc !== currentSrc);
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     setIsLoaded(true);
@@ -87,10 +104,10 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
       className={`relative overflow-hidden ${wrapperClassName}`}
       style={aspectRatio ? { aspectRatio } : undefined}
     >
-      {/* Sleek Skeleton Placeholder with Pulse Animation */}
+      {/* Sleek Skeleton Placeholder */}
       {showPlaceholder && !isLoaded && (
         <div 
-          className="absolute inset-0 bg-neutral-900/80 animate-pulse flex items-center justify-center z-0"
+          className="absolute inset-0 bg-neutral-900/60 animate-pulse flex items-center justify-center z-0"
           aria-hidden="true"
         >
           <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/20">
@@ -99,7 +116,6 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
         </div>
       )}
 
-      {/* Modern Picture Tag with WebP & Responsive SrcSet */}
       {isInView && (
         <picture className="w-full h-full block">
           {srcSet ? (
@@ -108,23 +124,24 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
               srcSet={srcSet}
               sizes={sizes}
             />
-          ) : (
+          ) : hasRealWebp ? (
             <source
               type="image/webp"
               srcSet={webpSrc}
             />
-          )}
+          ) : null}
 
           <img
-            src={webpSrc || currentSrc}
+            ref={imgRef}
+            src={hasRealWebp ? webpSrc : currentSrc}
             alt={alt}
             loading={priority ? 'eager' : 'lazy'}
             decoding={priority ? 'sync' : 'async'}
             referrerPolicy="no-referrer"
             onLoad={handleImageLoad}
             onError={handleImageError}
-            className={`transition-all duration-500 ease-out transform-gpu will-change-transform ${
-              isLoaded ? 'opacity-100 scale-100 blur-0' : 'opacity-0 scale-[1.02] blur-sm'
+            className={`transition-opacity duration-300 ease-out transform-gpu ${
+              isLoaded ? 'opacity-100' : 'opacity-0'
             } ${className}`}
             {...rest}
           />

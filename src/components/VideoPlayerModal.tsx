@@ -23,13 +23,12 @@ interface VideoPlayerModalProps {
 export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClose }) => {
   const [copied, setCopied] = React.useState(false);
 
-  if (!video) return null;
-
-  const parsed = parseVideoUrl(video.url);
-  const embedSrc = video.embedUrl || parsed?.embedUrl || video.url;
-  const platform = video.platform || parsed?.type || 'direct';
+  const parsed = video ? parseVideoUrl(video.url) : null;
+  const embedSrc = video ? (video.embedUrl || parsed?.embedUrl || video.url) : '';
+  const platform = video ? (video.platform || parsed?.type || 'direct') : 'direct';
 
   const handleCopyLink = () => {
+    if (!video) return;
     navigator.clipboard.writeText(video.url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -37,24 +36,27 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClo
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 lg:p-8 overflow-y-auto">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/90 backdrop-blur-md"
-        />
+      {video && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 lg:p-8 overflow-y-auto">
+          {/* Backdrop */}
+          <motion.div
+            key="video-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/90 backdrop-blur-md"
+          />
 
-        {/* Modal Window Cinema Box */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96, y: 20 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-5xl bg-[var(--modal-bg)] border border-[var(--border-strong)] rounded-2xl overflow-hidden shadow-2xl z-10 my-4 sm:my-8 flex flex-col"
-        >
+          {/* Modal Window Cinema Box */}
+          <motion.div
+            key="video-cinema-box"
+            initial={{ opacity: 0, scale: 0.96, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 20 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="relative w-full max-w-5xl bg-[var(--modal-bg)] border border-[var(--border-strong)] rounded-2xl overflow-hidden shadow-2xl z-10 my-4 sm:my-8 flex flex-col"
+          >
           {/* Modal Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)] bg-[var(--bg-secondary)] gap-3 shrink-0">
             <div className="flex items-center gap-3">
@@ -170,6 +172,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClo
           </div>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };

@@ -62,6 +62,23 @@ export const ProjectUploader: React.FC<ProjectUploaderProps> = ({
   const [documentName, setDocumentName] = useState('');
   const [documentType, setDocumentType] = useState('none');
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  
+  // Image upload state
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [fileName, setFileName] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  
+  // AI generation tools state
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [showAiStudio, setShowAiStudio] = useState(false);
+  const [isVeoAnimating, setIsVeoAnimating] = useState(false);
+  const [veoProgress, setVeoProgress] = useState(0);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const videoPreview = parseVideoUrl(videoUrl);
   const docPreview = parseDocumentUrl(documentUrl, documentType);
@@ -94,23 +111,6 @@ export const ProjectUploader: React.FC<ProjectUploaderProps> = ({
       setDocumentType('pptx');
     }
   };
-  
-  // Image upload state
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [galleryImages, setGalleryImages] = useState<string[]>([]);
-  const [fileName, setFileName] = useState<string>('');
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  
-  // AI generation tools state
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [isAiGenerating, setIsAiGenerating] = useState(false);
-  const [showAiStudio, setShowAiStudio] = useState(false);
-  const [isVeoAnimating, setIsVeoAnimating] = useState(false);
-  const [veoProgress, setVeoProgress] = useState(0);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle local disk file upload with preview & progress
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

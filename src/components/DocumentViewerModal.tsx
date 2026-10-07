@@ -33,35 +33,49 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({ docume
   const [copied, setCopied] = useState(false);
   const [viewMode, setViewMode] = useState<'embed' | 'slides_preview'>('embed');
 
-  if (!doc) return null;
+  React.useEffect(() => {
+    if (doc) {
+      setActiveSlide(1);
+      setIsFullscreen(false);
+      setViewMode('embed');
+    }
+  }, [doc?.id]);
 
-  const docParsed = parseDocumentUrl(doc.fileUrl || doc.embedUrl, doc.type);
-  const isCanva = doc.type === 'canva' || doc.source === 'canva' || docParsed?.type === 'canva' || (doc.fileUrl && doc.fileUrl.includes('canva.com'));
-  const isGoogleSlides = doc.type === 'google_slides' || docParsed?.type === 'google_slides';
-  const isPPTX = doc.type === 'pptx' || docParsed?.type === 'pptx';
-  const isPDF = doc.type === 'pdf' || docParsed?.type === 'pdf';
-  const isDrive = doc.type === 'google_drive' || doc.source === 'google_drive' || docParsed?.type === 'drive';
+  const docParsed = doc ? parseDocumentUrl(doc.fileUrl || doc.embedUrl, doc.type) : null;
+  const isCanva = Boolean(
+    doc && (
+      doc.type === 'canva' || 
+      doc.source === 'canva' || 
+      docParsed?.type === 'canva' || 
+      (doc.fileUrl && doc.fileUrl.includes('canva.com'))
+    )
+  );
+  const isGoogleSlides = Boolean(doc && (doc.type === 'google_slides' || docParsed?.type === 'google_slides'));
+  const isPPTX = Boolean(doc && (doc.type === 'pptx' || docParsed?.type === 'pptx'));
+  const isPDF = Boolean(doc && (doc.type === 'pdf' || docParsed?.type === 'pdf'));
+  const isDrive = Boolean(doc && (doc.type === 'google_drive' || doc.source === 'google_drive' || docParsed?.type === 'drive'));
 
   // Determine optimal iframe embed URL
-  let embedUrl = doc.embedUrl || docParsed?.embedUrl || doc.fileUrl;
-  if (isCanva) {
+  let embedUrl = doc?.embedUrl || docParsed?.embedUrl || doc?.fileUrl || '';
+  if (isCanva && doc) {
     embedUrl = formatCanvaEmbedUrl(doc.fileUrl || doc.embedUrl);
-  } else if (doc.fileUrl && doc.fileUrl.includes('drive.google.com')) {
+  } else if (doc?.fileUrl && doc.fileUrl.includes('drive.google.com')) {
     embedUrl = formatGoogleDrivePreviewUrl(doc.fileUrl);
-  } else if (isPPTX && !embedUrl.includes('officeapps') && !embedUrl.includes('docs.google.com/viewer')) {
-    // If external URL, wrap with Microsoft Office online viewer or Google docs viewer
+  } else if (isPPTX && doc && !embedUrl.includes('officeapps') && !embedUrl.includes('docs.google.com/viewer')) {
     embedUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(doc.fileUrl)}&embedded=true`;
   }
 
-  const canvaDirectUrl = isCanva ? (getCanvaDirectViewUrl(doc.fileUrl || doc.embedUrl) || doc.fileUrl) : doc.fileUrl;
+  const canvaDirectUrl = isCanva && doc ? (getCanvaDirectViewUrl(doc.fileUrl || doc.embedUrl) || doc.fileUrl) : (doc?.fileUrl || '');
 
   const handleCopyLink = () => {
+    if (!doc) return;
     navigator.clipboard.writeText(doc.fileUrl || embedUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDownload = () => {
+    if (!doc) return;
     if (doc.fileUrl.startsWith('data:')) {
       const a = document.createElement('a');
       a.href = doc.fileUrl;
@@ -74,15 +88,17 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({ docume
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 lg:p-6 overflow-y-auto">
-        {/* Backdrop */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="fixed inset-0 bg-black/90 backdrop-blur-md"
-        />
+      {doc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 lg:p-6 overflow-y-auto">
+          {/* Backdrop */}
+          <motion.div
+            key="doc-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/90 backdrop-blur-md"
+          />
 
         {/* Modal Window Container */}
         <motion.div
@@ -347,6 +363,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({ docume
           </div>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };
