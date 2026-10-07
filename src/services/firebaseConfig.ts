@@ -12,12 +12,13 @@
 // ==========================================
 
 export const firebaseConfigTemplate = {
-  apiKey: "AIzaSyDummyKey_ReplaceWithYourActualKey",
-  authDomain: "tu-portafolio-creativo.firebaseapp.com",
-  projectId: "tu-portafolio-creativo",
-  storageBucket: "tu-portafolio-creativo.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdef1234567890"
+  apiKey: "AIzaSyCeVagQqsldfudWAPXbF-x439wVkLcuYs0",
+  authDomain: "gen-lang-client-0126152032.firebaseapp.com",
+  projectId: "gen-lang-client-0126152032",
+  storageBucket: "gen-lang-client-0126152032.firebasestorage.app",
+  messagingSenderId: "387176654128",
+  appId: "1:387176654128:web:a4e3a6574a49ada91fd4f5",
+  firestoreDatabaseId: "ai-studio-asaelagramontepo-2753875b-6ad2-45e0-875c-5765a745d778"
 };
 
 /**
