@@ -18,7 +18,9 @@ import { EditProfilePhotoModal } from './EditProfilePhotoModal';
 import { EditSectionModal } from './EditSectionModal';
 import { AddVideoModal } from './AddVideoModal';
 import { AddDocumentModal } from './AddDocumentModal';
+import { ImageHostingModal } from './ImageHostingModal';
 import { SiteContentService } from '../services/siteContentService';
+import { StorageService } from '../services/storageService';
 import { 
   Lock, 
   Unlock, 
@@ -52,7 +54,10 @@ import {
   Presentation,
   Download,
   FileUp,
-  X
+  X,
+  Cloud,
+  UploadCloud,
+  Image as ImageIcon
 } from 'lucide-react';
 
 interface AdminPanelProps {
@@ -132,8 +137,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Tabs state: 'projects' | 'new_project' | 'videos' | 'documents' | 'sections' | 'profile_photos' | 'experience'
-  const [currentTab, setCurrentTab] = useState<'projects' | 'new_project' | 'videos' | 'documents' | 'sections' | 'profile_photos' | 'experience'>('projects');
+  // Tabs state: 'projects' | 'new_project' | 'videos' | 'documents' | 'sections' | 'profile_photos' | 'experience' | 'storage'
+  const [currentTab, setCurrentTab] = useState<'projects' | 'new_project' | 'videos' | 'documents' | 'sections' | 'profile_photos' | 'experience' | 'storage'>('projects');
+  const [isHostingModalOpen, setIsHostingModalOpen] = useState(false);
 
   // Search & Filter state for projects
   const [searchQuery, setSearchQuery] = useState('');
@@ -358,6 +364,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </button>
 
           <button
+            onClick={() => setIsHostingModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-[var(--bg-secondary)] hover:bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl transition-colors cursor-pointer text-xs font-mono"
+            title="Hosting y Almacenamiento de Imágenes (Cloud Storage)"
+          >
+            <Cloud className="w-4 h-4 text-emerald-400" />
+            <span className="hidden sm:inline">Hosting Imágenes</span>
+          </button>
+
+          <button
             onClick={onOpenArchitectureDocs}
             className="p-2.5 bg-[var(--bg-secondary)] hover:bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-xl transition-colors cursor-pointer"
             title="Ver Arquitectura y Base de Datos"
@@ -503,7 +518,174 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <Briefcase className="w-3.5 h-3.5" />
           <span>Trayectoria & CV ({experiences.length})</span>
         </button>
+
+        <button
+          onClick={() => setCurrentTab('storage')}
+          className={`px-4 py-2 text-xs font-mono rounded-lg transition-colors cursor-pointer whitespace-nowrap flex items-center gap-2 ${
+            currentTab === 'storage'
+              ? 'bg-[var(--accent-color)] text-white font-semibold shadow-sm'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'
+          }`}
+        >
+          <Cloud className="w-3.5 h-3.5 text-emerald-400" />
+          <span>Hosting de Imágenes</span>
+        </button>
       </div>
+
+      {/* TAB: HOSTING Y ALMACENAMIENTO DE IMÁGENES */}
+      {currentTab === 'storage' && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-[var(--border-subtle)] gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-mono text-emerald-400 font-semibold uppercase">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Almacenamiento en la Nube Activo</span>
+              </div>
+              <h3 className="font-bebas text-3xl sm:text-4xl text-[var(--text-primary)] tracking-wide">
+                HOSTING DE IMÁGENES & MEDIA CLOUD
+              </h3>
+              <p className="text-xs text-[var(--text-secondary)]">
+                Conexión directa a Google Cloud Firebase Storage para alojar imágenes de proyectos, carruseles y fotos de perfil con URLs permanentes.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setIsHostingModalOpen(true)}
+              className="px-5 py-2.5 bg-[var(--accent-color)] hover:bg-[var(--accent-hover)] text-white text-xs font-mono font-semibold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-md self-start sm:self-auto"
+            >
+              <Sliders className="w-4 h-4" />
+              <span>Configuración y Diagnóstico</span>
+            </button>
+          </div>
+
+          {/* Hosting Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Card 1: Firebase Storage */}
+            <div className="p-6 rounded-2xl bg-[var(--bg-card)] border-2 border-emerald-500/40 shadow-lg space-y-4 relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <Cloud className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">
+                  EN USO
+                </span>
+              </div>
+              <div>
+                <h4 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wide">
+                  FIREBASE CLOUD STORAGE
+                </h4>
+                <p className="text-xs text-[var(--text-secondary)]">
+                  Bucket oficial de Google Cloud conectado a tu proyecto:
+                </p>
+                <div className="mt-2 p-2 bg-[var(--bg-primary)] rounded-lg border border-[var(--border-subtle)] font-mono text-[11px] text-emerald-400 truncate">
+                  gen-lang-client-0126152032.firebasestorage.app
+                </div>
+              </div>
+              <ul className="text-xs text-[var(--text-muted)] space-y-1.5 pt-2 border-t border-[var(--border-subtle)]">
+                <li className="flex items-center gap-1.5 text-emerald-400">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Subida directa de archivos binarios (File / Blob)</span>
+                </li>
+                <li className="flex items-center gap-1.5 text-emerald-400">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Generación de URL pública en firebasestorage.googleapis.com</span>
+                </li>
+                <li className="flex items-center gap-1.5 text-emerald-400">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Organizado en carpetas /projects/ y /profile/</span>
+                </li>
+              </ul>
+              <button
+                onClick={() => setIsHostingModalOpen(true)}
+                className="w-full py-2 bg-[var(--bg-secondary)] hover:bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-primary)] text-xs font-mono rounded-lg transition-colors cursor-pointer"
+              >
+                Ver Reglas de Seguridad & Probar
+              </button>
+            </div>
+
+            {/* Card 2: Cloudinary Option */}
+            <div className="p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
+                  <Server className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">
+                  DISPONIBLE
+                </span>
+              </div>
+              <div>
+                <h4 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wide">
+                  CLOUDINARY CDN
+                </h4>
+                <p className="text-xs text-[var(--text-secondary)]">
+                  Hosting CDN global de imágenes con optimizaciones y transformaciones dinámicas.
+                </p>
+              </div>
+              <p className="text-xs text-[var(--text-muted)]">
+                Puedes alternar a Cloudinary ingresando tu Cloud Name y Upload Preset unsigned.
+              </p>
+              <button
+                onClick={() => setIsHostingModalOpen(true)}
+                className="w-full py-2 bg-[var(--bg-secondary)] hover:bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-mono rounded-lg transition-colors cursor-pointer"
+              >
+                Configurar Cloudinary
+              </button>
+            </div>
+
+            {/* Card 3: ImgBB Option */}
+            <div className="p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <ImageIcon className="w-5 h-5" />
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">
+                  DISPONIBLE
+                </span>
+              </div>
+              <div>
+                <h4 className="font-bebas text-2xl text-[var(--text-primary)] tracking-wide">
+                  IMGBB HOSTING
+                </h4>
+                <p className="text-xs text-[var(--text-secondary)]">
+                  Alojamiento rápido y gratuito mediante API Key para enlaces directos.
+                </p>
+              </div>
+              <p className="text-xs text-[var(--text-muted)]">
+                Ideal como respaldo secundario si no deseas usar cuentas de Google Cloud.
+              </p>
+              <button
+                onClick={() => setIsHostingModalOpen(true)}
+                className="w-full py-2 bg-[var(--bg-secondary)] hover:bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-mono rounded-lg transition-colors cursor-pointer"
+              >
+                Configurar ImgBB
+              </button>
+            </div>
+          </div>
+
+          {/* Pre-upload Optimization banner */}
+          <div className="p-5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-[var(--accent-color)]/10 border border-[var(--accent-color)]/30 flex items-center justify-center text-[var(--accent-color)] shrink-0">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-[var(--text-primary)]">
+                  Compresor Inteligente Pre-Envío Activado
+                </h4>
+                <p className="text-xs text-[var(--text-muted)]">
+                  Las fotografías seleccionadas se optimizan automáticamente a formato WebP (hasta 2048px) antes de enviarse al hosting. Esto ahorra hasta un 90% de almacenamiento y acelera la carga para clientes.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setIsHostingModalOpen(true)}
+              className="px-4 py-2 text-xs font-mono bg-[var(--bg-secondary)] hover:bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-xl text-[var(--text-primary)] cursor-pointer whitespace-nowrap transition-colors"
+            >
+              Ajustar Resolución
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* TAB: VIDEOS & SHOWREELS */}
       {currentTab === 'videos' && (
@@ -1949,6 +2131,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           setIsDocumentModalOpen(false);
           setEditingDocument(null);
         }}
+      />
+
+      {/* Image Hosting & Cloud Storage Modal */}
+      <ImageHostingModal
+        isOpen={isHostingModalOpen}
+        onClose={() => setIsHostingModalOpen(false)}
       />
     </div>
   );

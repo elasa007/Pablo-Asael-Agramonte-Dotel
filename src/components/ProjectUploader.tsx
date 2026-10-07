@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { SpecialtyCategory, Project } from '../types/portfolio';
+import { StorageService } from '../services/storageService';
+import { ImageHostingModal } from './ImageHostingModal';
 import { 
   Upload, 
   Image as ImageIcon, 
@@ -14,7 +16,9 @@ import {
   Video as VideoIcon,
   FileText,
   Presentation,
-  Play
+  Play,
+  UploadCloud,
+  Cloud
 } from 'lucide-react';
 import { parseVideoUrl, parseDocumentUrl, formatGoogleDrivePreviewUrl } from '../utils/mediaEmbed';
 
@@ -112,8 +116,11 @@ export const ProjectUploader: React.FC<ProjectUploaderProps> = ({
     }
   };
 
-  // Handle local disk file upload with preview & progress
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isHostingModalOpen, setIsHostingModalOpen] = useState(false);
+  const [activeStorageProvider, setActiveStorageProvider] = useState<'firebase' | 'cloudinary' | 'imgbb'>(() => StorageService.getSettings().provider);
+
+  // Handle cloud hosting file upload with preview & progress
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
@@ -125,42 +132,63 @@ export const ProjectUploader: React.FC<ProjectUploaderProps> = ({
       return;
     }
 
+    const settings = StorageService.getSettings();
+    setActiveStorageProvider(settings.provider);
+    const providerName = settings.provider === 'firebase' 
+      ? 'Firebase Storage' 
+      : (settings.provider === 'cloudinary' ? 'Cloudinary' : 'ImgBB');
+
     setFileName(validFiles.length > 1 ? `${validFiles.length} imágenes para carrusel` : validFiles[0].name);
     setStatusMessage(null);
     setIsUploading(true);
-    setUploadProgress(20);
+    setUploadProgress(10);
 
-    const readers = validFiles.map(file => {
-      return new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-    });
+    const uploadedUrls: string[] = [];
+    let hadError = false;
 
-    Promise.all(readers).then(images => {
-      setTimeout(() => {
-        setUploadProgress(100);
-        setTimeout(() => {
-          setGalleryImages(prev => [...prev, ...images]);
-          if (!imagePreview && images.length > 0) {
-            setImagePreview(images[0]);
-          } else if (images.length > 0) {
-            setImagePreview(images[0]);
-          }
-          setIsUploading(false);
-          setStatusMessage({ 
-            type: 'success', 
-            text: validFiles.length > 1 
-              ? `¡${validFiles.length} imágenes cargadas para el carrusel de la obra!` 
-              : `Archivo "${validFiles[0].name}" cargado exitosamente.` 
-          });
-        }, 300);
-      }, 300);
-    }).catch(() => {
+    for (let i = 0; i < validFiles.length; i++) {
+      const file = validFiles[i];
+      try {
+        const result = await StorageService.uploadImage(file, 'projects', (pct) => {
+          const overall = Math.round(((i) / validFiles.length) * 100 + (pct / validFiles.length));
+          setUploadProgress(Math.min(99, Math.max(10, overall)));
+        });
+        uploadedUrls.push(result.url);
+      } catch (uploadErr) {
+        console.warn(`Error al subir imagen a ${providerName}:`, uploadErr);
+        hadError = true;
+        // Respaldo resiliente a base64 para evitar pérdida de trabajo en sesión
+        const localFallback = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+        uploadedUrls.push(localFallback);
+      }
+    }
+
+    setUploadProgress(100);
+    setTimeout(() => {
+      setGalleryImages(prev => [...prev, ...uploadedUrls]);
+      if (uploadedUrls.length > 0) {
+        setImagePreview(uploadedUrls[0]);
+      }
       setIsUploading(false);
-      setStatusMessage({ type: 'error', text: 'Error al leer los archivos del disco local.' });
-    });
+      
+      if (!hadError) {
+        setStatusMessage({ 
+          type: 'success', 
+          text: validFiles.length > 1 
+            ? `¡${validFiles.length} imágenes alojadas exitosamente en ${providerName}!` 
+            : `Imagen "${validFiles[0].name}" alojada exitosamente en ${providerName}.` 
+        });
+      } else {
+        setStatusMessage({
+          type: 'error',
+          text: `Las imágenes se cargaron en sesión, pero el hosting (${providerName}) reportó un permiso o configuración pendiente. Revisa la pestaña de Hosting de Imágenes.`
+        });
+      }
+    }, 300);
   };
 
   // AI Aspect Ratio Visual Generator simulation
@@ -423,9 +451,19 @@ export const ProjectUploader: React.FC<ProjectUploaderProps> = ({
 
         {/* Row 2: Image Uploader Zone with Preview and Progress Bar */}
         <div className="space-y-3">
-          <label className="block text-xs font-mono uppercase tracking-wider text-[var(--text-muted)]">
-            Imagen / Video del Proyecto <span className="text-[var(--accent-color)]">*</span>
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="block text-xs font-mono uppercase tracking-wider text-[var(--text-muted)]">
+              Imagen / Video del Proyecto <span className="text-[var(--accent-color)]">*</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => setIsHostingModalOpen(true)}
+              className="text-xs font-mono text-[var(--accent-color)] hover:underline flex items-center gap-1.5 cursor-pointer bg-[var(--accent-color)]/10 px-2.5 py-1 rounded-md border border-[var(--accent-color)]/20"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>Hosting: {activeStorageProvider === 'firebase' ? 'Firebase Cloud Storage' : (activeStorageProvider === 'cloudinary' ? 'Cloudinary' : 'ImgBB')}</span>
+            </button>
+          </div>
 
           <input
             type="file"
@@ -751,6 +789,15 @@ export const ProjectUploader: React.FC<ProjectUploaderProps> = ({
         </div>
 
       </form>
+
+      {/* Modal para configurar o probar el hosting de imágenes */}
+      <ImageHostingModal
+        isOpen={isHostingModalOpen}
+        onClose={() => {
+          setIsHostingModalOpen(false);
+          setActiveStorageProvider(StorageService.getSettings().provider);
+        }}
+      />
     </div>
   );
 };

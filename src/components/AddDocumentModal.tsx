@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { DocumentItem } from '../types/portfolio';
 import { parseDocumentUrl, formatGoogleDrivePreviewUrl, formatCanvaEmbedUrl, getCanvaDirectViewUrl } from '../utils/mediaEmbed';
+import { StorageService } from '../services/storageService';
 
 interface AddDocumentModalProps {
   isOpen: boolean;
@@ -116,14 +117,23 @@ export const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
       setTitle(file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' '));
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (typeof event.target?.result === 'string') {
-        setFileUrl(event.target.result);
+    // Intentar subida a Cloud Storage
+    StorageService.uploadImage(file, 'documents')
+      .then(res => {
+        setFileUrl(res.url);
         setError(null);
-      }
-    };
-    reader.readAsDataURL(file);
+      })
+      .catch(() => {
+        // Fallback a lectura local
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (typeof event.target?.result === 'string') {
+            setFileUrl(event.target.result);
+            setError(null);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
   };
 
   // Google Drive URL processing

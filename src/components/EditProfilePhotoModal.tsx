@@ -14,6 +14,7 @@ import {
   Plus
 } from 'lucide-react';
 import { SiteContentService } from '../services/siteContentService';
+import { StorageService } from '../services/storageService';
 
 interface EditProfilePhotoModalProps {
   isOpen: boolean;
@@ -72,7 +73,7 @@ export const EditProfilePhotoModal: React.FC<EditProfilePhotoModalProps> = ({
     }
   }, [isOpen, currentPhoto]);
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       setErrorMessage('Por favor selecciona un archivo de imagen válido (JPG, PNG, WebP).');
       return;
@@ -81,20 +82,31 @@ export const EditProfilePhotoModal: React.FC<EditProfilePhotoModalProps> = ({
     setErrorMessage(null);
     setIsProcessing(true);
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      setPhotoPreview(dataUrl);
-      SiteContentService.addProfilePhoto(dataUrl);
+    try {
+      const uploadRes = await StorageService.uploadImage(file, 'profile');
+      const cloudUrl = uploadRes.url;
+      setPhotoPreview(cloudUrl);
+      SiteContentService.addProfilePhoto(cloudUrl);
       const updated = SiteContentService.getProfile();
       setSavedPhotos(updated.profilePhotos);
       setIsProcessing(false);
-    };
-    reader.onerror = () => {
-      setIsProcessing(false);
-      setErrorMessage('Error al leer la imagen seleccionada.');
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.warn('Error uploading profile picture to storage, using local fallback:', err);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        setPhotoPreview(dataUrl);
+        SiteContentService.addProfilePhoto(dataUrl);
+        const updated = SiteContentService.getProfile();
+        setSavedPhotos(updated.profilePhotos);
+        setIsProcessing(false);
+      };
+      reader.onerror = () => {
+        setIsProcessing(false);
+        setErrorMessage('Error al leer la imagen seleccionada.');
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

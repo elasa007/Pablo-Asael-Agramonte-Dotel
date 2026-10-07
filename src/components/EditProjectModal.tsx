@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Project, SpecialtyCategory } from '../types/portfolio';
 import { parseVideoUrl, parseDocumentUrl, formatGoogleDrivePreviewUrl } from '../utils/mediaEmbed';
+import { StorageService } from '../services/storageService';
 
 interface EditProjectModalProps {
   project: Project | null;
@@ -93,13 +94,16 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
     }
   }, [project, isOpen]);
 
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
+    setIsUploadingImage(true);
+    try {
+      const res = await StorageService.uploadImage(file, 'projects');
+      const result = res.url;
       setImageUrl(result);
       setImages(prev => {
         if (prev.length === 0) return [result];
@@ -107,32 +111,55 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
         next[0] = result;
         return next;
       });
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      // Fallback a lectura local
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        setImageUrl(result);
+        setImages(prev => {
+          if (prev.length === 0) return [result];
+          const next = [...prev];
+          next[0] = result;
+          return next;
+        });
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
-  const handleMultipleImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMultipleImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     const fileList = Array.from(files);
-    const readers = fileList.map(file => {
-      return new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsDataURL(file);
-      });
-    });
+    setIsUploadingImage(true);
 
-    Promise.all(readers).then(newImages => {
-      setImages(prev => {
-        const updated = [...prev, ...newImages];
-        if (!imageUrl && updated.length > 0) {
-          setImageUrl(updated[0]);
-        }
-        return updated;
-      });
+    const uploadedUrls: string[] = [];
+    for (const file of fileList) {
+      try {
+        const res = await StorageService.uploadImage(file, 'projects');
+        uploadedUrls.push(res.url);
+      } catch {
+        const local = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+        uploadedUrls.push(local);
+      }
+    }
+
+    setImages(prev => {
+      const updated = [...prev, ...uploadedUrls];
+      if (!imageUrl && updated.length > 0) {
+        setImageUrl(updated[0]);
+      }
+      return updated;
     });
+    setIsUploadingImage(false);
   };
 
   const handleAddImageUrl = () => {
